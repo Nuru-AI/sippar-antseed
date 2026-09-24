@@ -76,11 +76,9 @@ Prices are published on the peer record and change, so this repository does not 
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 ```
 
-## Under the hood
+## About the data
 
-Sippar derives one keyless identity across many blockchain networks using Internet Computer threshold signatures, and amortizes the cost of those signatures across many small payments. There is no seed phrase and no private key on the machine that serves these listings. Sippar is designed to be the connector, not the custodian, and is on a scoped path to non-custody.
-
-The data itself is read from public sources at request time and passed through. Sippar does not store, cache, blend or reconcile it, because a cached price is a wrong price with a timestamp.
+The data is read from public sources at request time and passed through. Sippar does not store, cache, blend or reconcile it, because a cached price is a wrong price with a timestamp.
 
 ## Discover more Sippar services
 
@@ -89,6 +87,7 @@ These two listings are one surface. The full Sippar catalog of payable services 
 - Machine-readable: <https://sippar.network/llms.txt> and <https://sippar.network/api/sippar/marketplace>
 - Web: <https://sippar.network/marketplace>
 - For AI agents over MCP: <https://sippar.network/mcp>
+- For Solana Agent Kit agents: <https://github.com/Nuru-AI/sippar-sak-x402>, our public x402 relay client
 
 ## License
 
