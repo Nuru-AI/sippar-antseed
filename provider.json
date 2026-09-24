@@ -1,0 +1,22 @@
+{
+  "providerName": "Sippar Onchain Data",
+  "peerId": "706fca9c0d0684c30f86209aae0c3565ce1aa69f",
+  "agentId": 84918,
+  "sellerAddress": "0x706FCA9C0d0684C30F86209AAe0c3565cE1aa69F",
+  "chain": "base-mainnet",
+  "settlementAsset": "USDC",
+  "serviceApiProtocols": ["openai-chat-completions"],
+  "services": [
+    {
+      "id": "sippar-chain-state",
+      "supportedParameters": ["network", "fields"]
+    },
+    {
+      "id": "onchain-token-rankings",
+      "supportedParameters": []
+    }
+  ],
+  "githubProof": "https://raw.githubusercontent.com/Nuru-AI/sippar-antseed/HEAD/antseed.json",
+  "domainProof": "https://sippar.network/.well-known/antseed.json",
+  "operator": "Nuru-AI"
+}
