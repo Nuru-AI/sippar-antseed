@@ -14,32 +14,50 @@ Sippar serves two data listings on AntSeed. This skill carries the three things 
 | `sippar-chain-state` | live public chain facts, read at request time | `network`, `fields` |
 | `onchain-token-rankings` | largest onchain tokens by fully diluted value | none, always the full page |
 
+**The default `network` is `ethereum`.** Every example below uses `base` because it is a choice; if
+nothing reaches the seller you are served ethereum-mainnet and billed in full. 20 chains were served
+on 2026-09-24 — ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle, unichain, ink,
+soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad — and a value the
+listing does not serve is refused with an HTTP 400 that lists the current set, at zero on the ledger.
+The 12 `fields` names are on every payload as `selection.fieldsAvailable`: `blockNumber`, `gasPrice`,
+`maxPriorityFeePerGas`, `chainId`, `blockTimestamp`, `baseFeePerGas`, `blockGasUsed`,
+`blockGasLimit`, `blockTransactionCount`, `nativeBalance`, `transactionCount`, `erc20Balance`.
+
 Seller peer: `706fca9c0d0684c30f86209aae0c3565ce1aa69f`. Settlement is USDC on Base mainnet.
 
 ## Step 1, pin the peer
 
 Buyer auto-selection will not necessarily route to this seller, so pin it.
 
-```bash
-antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
+**An agent or script should pin per request**, which needs no CLI and no shared state:
+
+```
+x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 ```
 
-If a buyer proxy is already running, switch the pin without restarting:
+The other three routes: `"model": "0x706FCA9C0d0684C30F86209AAe0c3565cE1aa69F@sippar-chain-state"`,
+or a session pin, or the desktop app's Discover screen. The session pin needs the **bare** id,
+without `0x`; the other three take either form.
 
 ```bash
-antseed buyer connection set --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
+antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f      # CLI wallets only
+antseed buyer connection set --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f   # mutates a shared pin
 ```
 
-Free preflight, calls no model:
+**If the wallet belongs to the VPR desktop app, `antseed buyer start|balance|status` will not run** —
+the CLI cannot decrypt an Electron safeStorage identity. Pin from the app, or use the per-request
+header, or give the CLI its own `--data-dir`.
+
+Free preflight, calls no model, works in both setups:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
-antseed buyer balance
+antseed buyer connection get
 ```
 
 ## Step 2, use the chat-completions shape, always
 
-This seller advertises one API protocol, `openai-chat-completions`. Post to `/v1/chat/completions`.
+This seller advertises one API protocol, `openai-chat-completions`. Post to `/v1/chat/completions` on the local buyer proxy. `127.0.0.1:8377` is the default address only — `antseed buyer start --port <number>` moves it, so read the port from the proxy you are actually running.
 
 **Do NOT use `/v1/messages` or `/v1/responses` for a parameterised call.** The AntSeed buyer proxy translates between shapes by rebuilding the request body from a fixed key list, and a top-level `network` or `fields` is not on that list. It is dropped silently, you are served the default chain in full, and you pay the full page price. Nothing errors.
 
@@ -48,6 +66,7 @@ This seller advertises one API protocol, `openai-chat-completions`. Post to `/v1
 ```bash
 curl http://127.0.0.1:8377/v1/chat/completions \
   -H 'content-type: application/json' \
+  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
   -H 'x-antseed-required-parameters: network,fields' \
   -d '{
     "model": "sippar-chain-state",
@@ -57,7 +76,13 @@ curl http://127.0.0.1:8377/v1/chat/completions \
   }'
 ```
 
-`network` and `fields` are siblings of `model` and `messages`, never nested inside a message.
+`network` and `fields` are siblings of `model` and `messages`, never nested inside a message. From
+the OpenAI Python SDK that is `extra_body={"network": "base", "fields": [...]}` on
+`chat.completions.create` — and never the SDK's `responses` path, which posts to `/v1/responses` and
+is translated. (A human at a chat box has one alternative: sending a bare chain name as the entire
+message also selects the chain. A message longer than four words that merely mentions a chain does
+not — it silently returns ethereum, and bills you. That message-text path is the only case where the
+`confidence` slot in Step 5 carries a number.)
 
 ## Step 4, send the header on `sippar-chain-state`, and NOT on `onchain-token-rankings`
 
@@ -65,11 +90,32 @@ curl http://127.0.0.1:8377/v1/chat/completions \
 x-antseed-required-parameters: network,fields
 ```
 
-It makes the proxy refuse any call that would need a translation, before routing and before payment. A correct call on `sippar-chain-state` is unaffected. It is the difference between paying full price for the wrong chain and paying nothing.
+It makes the proxy refuse any call that would need a translation, before routing and before payment.
+A correct call on `sippar-chain-state` is unaffected. It is the difference between paying full price
+for the wrong chain and paying nothing — measured at zero on the ledger on a channel that was
+already open. On a channel's very first request we cannot measure it for you: your own client may
+already have pre-signed this seller's minimum before the refusal happens.
 
-**Do not send it for `onchain-token-rankings`.** That service takes no parameters and announces none, and the proxy treats a service with no announced parameters as supporting none of them: every parameter you require counts as missing, so the peer is filtered out of selection or a pinned call returns `422 required_capability_unavailable` every time. The refusal is free, but it is permanent and it does not explain itself.
+**It does not check your request body.** The proxy compares your header against what the seller
+announces, so a misspelled key on an untranslated route sails through: measured 2026-09-24,
+`{"netwrok": "base", ...}` with the header set returned HTTP 200, ethereum-mainnet, `mode=default`,
+billed as a normal served page. Step 5 is the only detector for that, so parse the routing line
+before you use the answer, not after.
 
-The rule in one line: **require only parameters the service announces.** `antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f` prints what each one announces.
+A translated call is refused with *"Pinned seller does not advertise required parameter(s)"*. It does
+advertise them — the wording is the proxy's, and it means your request was about to be translated.
+
+**Do not send it for `onchain-token-rankings`.** That service takes no parameters and announces none, and the proxy treats a service with no announced parameters as supporting none of them: every parameter you require counts as missing, so the peer is filtered out of selection or a pinned call returns `422 required_capability_unavailable` every time. The refusal does not explain itself. It is not a lockout: stop sending the header for
+that listing and calls resume immediately.
+
+The rule in one line: **require only parameters the service announces.** The human-readable peer
+record does not print them; `--json` does:
+
+```bash
+antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
+  | jq '.peer.providerServiceCapabilities.openai.services | map_values(.supportedParameters)'
+# {"onchain-token-rankings": null, "sippar-chain-state": ["network","fields"]}
+```
 
 ## Step 5, check the answer agreed with you
 
@@ -80,7 +126,10 @@ routing: mode=declared  network=base  confidence=n/a  source=network-field
 ```
 
 - `mode=declared` with `source=network-field` means the `network` argument arrived and drove the selection.
-- `mode=default` with `source=product-name` means nothing arrived. Do not treat that page as an answer about the chain you asked for.
+- `mode=default` with `source=product-name` means nothing arrived. Do not treat that page as an
+  answer about the chain you asked for. **Check this in code before consuming the answer** — it is
+  the one signal that catches both a translated request and your own typo, and by the time you read
+  it you have already paid.
 - The `confidence` slot carries a number only when a value was inferred from your message text rather than taken from a field you set, which the published terms describe; on a declared or default serve it reads `n/a`.
 
 ## Reading the answer
@@ -93,13 +142,20 @@ A row carrying a failure reason is already marked failed. Keep it rather than dr
 
 ## Cost
 
-Per call, metered on output tokens, settled in USDC on Base through an AntSeed payment channel. Rates are published on the peer record and change, so read them rather than assuming:
+Per call, metered on output tokens, settled in USDC on Base through an AntSeed payment channel. You
+are billed per output token at the rate on the peer record, not per page — and rates change, so read
+them rather than assuming. A refused call moved **nothing** on the ledger even where
+`x-antseed-estimated-cost-usd` claimed otherwise: one 400 reported a cost roughly twice that of a
+real answer against a ledger delta of zero. Cost a call from the ledger, never from the header.
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 ```
 
-Using `fields` to ask for fewer columns lowers what a call costs, which is the point of the parameter.
+Using `fields` lowers what a call costs, which is the point of the parameter. Measured 2026-09-24: a
+dropped `fields` costs **7.6x** what the same call costs with two rows named. But one row still
+costs about **13%** of the full page — the notes, attribution and JSON envelope are most of a small
+answer — so narrowing past a couple of rows saves little.
 
 ## Verify the shape rule yourself, free
 

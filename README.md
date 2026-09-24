@@ -9,19 +9,46 @@ Two listings, served from one seller peer, settled in USDC on Base:
 | `sippar-chain-state` | Live public chain facts, read at request time: block headers, gas, native balances, token supplies |
 | `onchain-token-rankings` | The largest onchain token contracts by fully diluted value, as fixed-schema rows |
 
-Both answer over the OpenAI chat-completions shape, so any OpenAI-compatible client works. Both return structured data, not prose.
+Both answer over the OpenAI chat-completions shape. Both return fixed-schema rows — a markdown
+table with the same rows fenced as JSON beneath it, plus notes you are meant to keep.
+
+An OpenAI-compatible client works **only on its chat-completions path**. The same SDK's
+`responses` path posts to `/v1/responses`, which is translated, and translation is what destroys
+your arguments. In the Python SDK, a top-level argument goes in `extra_body`:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://127.0.0.1:8377/v1", api_key="not-used")
+
+client.chat.completions.create(
+    model="sippar-chain-state",
+    messages=[{"role": "user", "content": "chain state"}],
+    extra_body={"network": "base", "fields": ["blockNumber", "gasPrice"]},
+    extra_headers={"x-antseed-required-parameters": "network,fields"},
+)
+```
+
+Run verbatim on `openai` 3.19.2, that posts to `/v1/chat/completions` with `network` and `fields`
+as top-level siblings of `model` and `messages`, and the header on the request — which is exactly
+the shape the rest of this page asks for.
 
 ## See it work
 
-Pin the peer and ask for one chain:
+You need the AntSeed buyer proxy, from either [the VPR desktop app](https://antseed.com) or
+`npm i -g @antseed/cli`. The desktop app runs the proxy for you; with the CLI, `antseed buyer start`
+brings it up. The two are not interchangeable for every command — see
+[BUYING.md](./BUYING.md#1-reach-the-peer). `127.0.0.1:8377` is its default address, not a fixed
+one: `antseed buyer start --port <number>` moves it.
 
-```bash
-antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
-```
+Pin the peer and ask for one chain. The pin can ride the request itself, which needs no CLI and
+changes nothing shared:
 
 ```bash
 curl http://127.0.0.1:8377/v1/chat/completions \
   -H 'content-type: application/json' \
+  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
+  -H 'x-antseed-required-parameters: network,fields' \
   -d '{
     "model": "sippar-chain-state",
     "network": "base",
@@ -29,6 +56,13 @@ curl http://127.0.0.1:8377/v1/chat/completions \
     "messages": [{"role": "user", "content": "chain state"}]
   }'
 ```
+
+`base` is a choice, not the default. **Omit `network` and you are served ethereum-mainnet** — in
+full, at full price, with no error. That is what the rest of this page is about.
+
+A session pin is the alternative, and it is the one that depends on which wallet you have:
+`antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f` does not run against a
+desktop-app wallet. [BUYING.md](./BUYING.md#1-reach-the-peer) has all four ways to pin.
 
 The answer comes back as a markdown table with the same rows fenced as JSON beneath it, and a routing line stating which chain was selected and why.
 
@@ -44,7 +78,17 @@ If your client speaks a different shape, the AntSeed buyer proxy translates it b
 x-antseed-required-parameters: network,fields
 ```
 
-The proxy then refuses any call that would need a translation, in milliseconds, before routing and before payment. A matching call is unaffected.
+The proxy then refuses any call that would need a translation, in milliseconds, before routing and
+before payment. A matching call is unaffected. On a channel you already have open we measured that
+refusal at zero on the ledger; [BUYING.md](./BUYING.md#4-fail-closed-instead-for-free) states the one
+case we cannot measure for you.
+
+**Know what it does not cover.** It is checked against what the *seller announces*, never against
+what *your body contains*. Misspell a key — `netwrok` — and the header passes, the call is served,
+and you are billed for the default chain. Measured 2026-09-24: HTTP 200, ethereum-mainnet,
+`mode=default`, billed in full. Read the routing line on every answer; it is the only thing that catches
+your own typo. Do not send this header on `onchain-token-rankings`, which announces no
+parameters — see [BUYING.md](./BUYING.md#4-fail-closed-instead-for-free).
 
 Full detail, including which shapes translate and what each one drops, is in [BUYING.md](./BUYING.md). The check is reproducible offline and costs nothing:
 
