@@ -33,6 +33,12 @@ Run verbatim on `openai` 3.19.2, that posts to `/v1/chat/completions` with `netw
 as top-level siblings of `model` and `messages`, and the header on the request — which is exactly
 the shape the rest of this page asks for.
 
+If you are stuck on a path that translates — the same SDK's `client.responses.create`, or an
+Anthropic-shape client posting to `/v1/messages` — put the arguments under `metadata` instead:
+`{"metadata": {"sippar": {"network": "base", "fields": ["blockNumber", "gasPrice"]}}}`, or send
+them as the `x-sippar-network` / `x-sippar-fields` headers. Both cross the translation, and both
+are served rather than refused. See *Read this before you pay* below.
+
 ## See it work
 
 You need the AntSeed buyer proxy, from either [the VPR desktop app](https://antseed.com) or
@@ -72,7 +78,33 @@ The answer comes back as a markdown table with the same rows fenced as JSON bene
 
 If your client speaks a different shape, the AntSeed buyer proxy translates it before the request reaches us, and translation rebuilds the request body from a fixed list of keys. **Your `network` and `fields` arguments do not survive that rebuild.** You would be served the default chain, in full, at full price, with no error.
 
-**There is a free defence and you should use it.** Send the parameters you depend on in a header:
+**Two channels survive that rebuild, and this listing reads both.** They are the better answer,
+because they get you the page you asked for instead of no page at all. Put the arguments in
+`metadata`, under a `sippar` key:
+
+```json
+{"model": "sippar-chain-state",
+ "messages": [{"role": "user", "content": "chain state"}],
+ "metadata": {"sippar": {"network": "base", "fields": ["blockNumber", "gasPrice"]}}}
+```
+
+or send them as headers, which cross every translation too:
+
+```
+x-sippar-network: base
+x-sippar-fields: blockNumber,gasPrice
+```
+
+A header can only carry text, so `fields` is comma-separated there; in `metadata` it may be either
+a list or the same comma string. The served page's routing line names the channel that answered —
+`source=network-meta` or `source=network-hdr` — so you can confirm it arrived.
+
+Neither channel is documented by this marketplace. Both are **measured to survive, not promised
+to**, and the check is free, offline and reproducible — it is the same one linked at the end of
+this section, and it fails loudly if the proxy's behaviour ever moves.
+
+**If you would rather be refused than served the wrong page**, there is also a header that fails
+closed:
 
 ```
 x-antseed-required-parameters: network,fields
@@ -80,15 +112,15 @@ x-antseed-required-parameters: network,fields
 
 The proxy then refuses any call that would need a translation, in milliseconds, before routing and
 before payment. A matching call is unaffected. On a channel you already have open we measured that
-refusal at zero on the ledger; [BUYING.md](./BUYING.md#4-fail-closed-instead-for-free) states the one
-case we cannot measure for you.
+refusal at zero on the ledger; [BUYING.md](./BUYING.md#5-or-fail-closed-instead-for-free) states the one
+case we cannot measure for you. Prefer the two channels above: this one costs you the answer.
 
 **Know what it does not cover.** It is checked against what the *seller announces*, never against
 what *your body contains*. Misspell a key — `netwrok` — and the header passes, the call is served,
 and you are billed for the default chain. Measured 2026-09-24: HTTP 200, ethereum-mainnet,
 `mode=default`, billed in full. Read the routing line on every answer; it is the only thing that catches
 your own typo. Do not send this header on `onchain-token-rankings`, which announces no
-parameters — see [BUYING.md](./BUYING.md#4-fail-closed-instead-for-free).
+parameters — see [BUYING.md](./BUYING.md#5-or-fail-closed-instead-for-free).
 
 Full detail, including which shapes translate and what each one drops, is in [BUYING.md](./BUYING.md). The check is reproducible offline and costs nothing:
 

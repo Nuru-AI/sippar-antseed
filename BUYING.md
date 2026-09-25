@@ -99,7 +99,44 @@ routing: mode=declared  network=base  confidence=n/a  source=network-field
 
 The `confidence` slot carries a number only when a value was inferred from your message text rather than taken from a field you set, which the published terms describe; on a declared or default serve it reads `n/a`.
 
-## 4. Fail closed instead, for free
+## 4. Two channels that survive a translation — and are SERVED
+
+If your client cannot post the chat-completions shape, you do not have to give up the arguments.
+Two channels cross every translation the proxy performs, and this listing reads both.
+
+**In the request body, namespaced under `sippar`:**
+
+```json
+{"model": "sippar-chain-state",
+ "messages": [{"role": "user", "content": "chain state"}],
+ "metadata": {"sippar": {"network": "base", "fields": ["blockNumber", "gasPrice"]}}}
+```
+
+**Or as request headers:**
+
+```
+x-sippar-network: base
+x-sippar-fields: blockNumber,gasPrice
+x-sippar-address: 0x…
+x-sippar-blocks: 1
+```
+
+A header can only carry text, so `fields` is comma-separated there; in `metadata` it may be a list
+or the same comma string. A top-level field, when it reaches us, still wins over both — these are
+the fallbacks for a shape that cannot deliver one, not a second way to override it.
+
+**Confirm it arrived.** §3's routing line names the channel that answered: `source=network-meta`
+for the `metadata` channel, `source=network-hdr` for the header, `source=network-field` for a
+top-level field. `source=default` means none of them reached us.
+
+**The bound, stated plainly.** Neither channel is documented by this marketplace. Both are
+**measured to survive, not promised to** — the measurement is free, offline and reproducible
+(§6), and it fails loudly if the proxy's behaviour moves. We watch it; you can run it yourself.
+
+## 5. Or fail closed instead, for free
+
+The channels in §4 get you the page you asked for. This one gets you no page at all, which is
+worse for you unless you would genuinely rather be refused than served the wrong chain.
 
 Send the parameters you depend on as a header:
 
@@ -143,7 +180,7 @@ already served dozens of requests. On a channel you have just opened we cannot m
 your own client may already have pre-signed this seller's minimum for that channel's first request.
 That commitment is between you and your buyer proxy, and is outside this listing's control.
 
-## 5. Verify all of this yourself, offline
+## 6. Verify all of this yourself, offline
 
 ```bash
 node tools/check-argument-survival.mjs
@@ -155,7 +192,7 @@ this document was written. It makes no network call and spends nothing. Last con
 api-adapter **0.1.48** with antseed CLI **0.1.157**; the script prints the version it actually
 loaded, so compare that line with this one.
 
-## 6. What the answers contain
+## 7. What the answers contain
 
 Both listings return structured data, never composed prose.
 
@@ -176,6 +213,6 @@ repository does not print them.
 
 `onchain-token-rankings` ignores request parameters by design and always returns the full page.
 
-## 7. Support
+## 8. Support
 
 Open an issue in this repository. For anything about the Sippar relay itself rather than these two listings, start at <https://sippar.network>.

@@ -1,11 +1,11 @@
 ---
 name: sippar-antseed-buyer
-description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current public chain facts (block height, gas, native balances, token supplies) or the largest onchain tokens by fully diluted value, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, x-antseed-required-parameters.
+description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current public chain facts (block height, gas, native balances, token supplies) or the largest onchain tokens by fully diluted value, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, my arguments were dropped in translation, metadata.sippar, x-sippar-network, x-antseed-required-parameters.
 ---
 
 # Buying from Sippar Onchain Data on AntSeed
 
-Sippar serves two data listings on AntSeed. This skill carries the three things that decide whether a call returns what was asked for: the pin, the request shape, and the header that fails closed.
+Sippar serves two data listings on AntSeed. This skill carries the three things that decide whether a call returns what was asked for: the pin, the request shape, and — when the shape cannot be changed — the two channels that survive a translation and are still served.
 
 ## The two listings
 
@@ -61,6 +61,8 @@ This seller advertises one API protocol, `openai-chat-completions`. Post to `/v1
 
 **Do NOT use `/v1/messages` or `/v1/responses` for a parameterised call.** The AntSeed buyer proxy translates between shapes by rebuilding the request body from a fixed key list, and a top-level `network` or `fields` is not on that list. It is dropped silently, you are served the default chain in full, and you pay the full page price. Nothing errors.
 
+**If you cannot change the shape, you still have two channels** — `metadata.sippar.*` and the `x-sippar-*` headers — which cross every translation and are read by this listing. Step 4 has them. They are strictly better than being refused.
+
 ## Step 3, send the parameters at the top level
 
 ```bash
@@ -84,7 +86,47 @@ message also selects the chain. A message longer than four words that merely men
 not — it silently returns ethereum, and bills you. That message-text path is the only case where the
 `confidence` slot in Step 5 carries a number.)
 
-## Step 4, send the header on `sippar-chain-state`, and NOT on `onchain-token-rankings`
+## Step 4, if your shape is translated, use a channel that survives
+
+Two channels cross every translation the proxy performs, and this listing reads both. Unlike the
+header in Step 4b, these get you **the page you asked for** rather than no page.
+
+```bash
+curl http://127.0.0.1:8377/v1/messages \
+  -H 'content-type: application/json' \
+  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
+  -H 'x-sippar-network: base' \
+  -H 'x-sippar-fields: blockNumber,gasPrice' \
+  -d '{
+    "model": "sippar-chain-state",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "chain state"}]
+  }'
+```
+
+The same four arguments also ride the request body under `metadata.sippar`, which survives the
+rebuild whole:
+
+```json
+"metadata": {"sippar": {"network": "base", "fields": ["blockNumber", "gasPrice"]}}
+```
+
+`network`, `fields`, `address` and `blocks` are all readable from either channel. A header can only
+carry text, so `fields` is comma-separated there; under `metadata` it may be a list or the same
+comma string. A top-level field still wins when it reaches us — these are the fallback for a shape
+that cannot deliver one, not a second way to override it.
+
+**Confirm it arrived** on the routing line (Step 5): `source=network-meta` or `source=network-hdr`.
+
+**The bound.** Neither channel is documented by this marketplace. Both are **measured to survive,
+not promised to**. The measurement is free, offline, reproducible, and fails loudly if the proxy
+moves — see the verification section of [BUYING.md](../../BUYING.md).
+
+## Step 4b, or fail closed instead — on `sippar-chain-state`, and NOT on `onchain-token-rankings`
+
+Prefer Step 4. This header buys you a refusal, not an answer; take it only if you would rather be
+refused than served the wrong chain.
+
 
 ```
 x-antseed-required-parameters: network,fields
