@@ -9,7 +9,7 @@
   "services": [
     {
       "id": "sippar-chain-state",
-      "supportedParameters": ["network", "fields"]
+      "supportedParameters": ["address", "blocks", "fields", "network"]
     },
     {
       "id": "onchain-token-rankings",

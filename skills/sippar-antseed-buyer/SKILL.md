@@ -11,7 +11,7 @@ Sippar serves two data listings on AntSeed. This skill carries the three things 
 
 | Model string | Returns | Accepts parameters |
 |---|---|---|
-| `sippar-chain-state` | live public chain facts, read at request time | `network`, `fields` |
+| `sippar-chain-state` | live public chain facts, read at request time | `network`, `fields`, `address`, `blocks` |
 | `onchain-token-rankings` | largest onchain tokens by fully diluted value | none, always the full page |
 
 **The default `network` is `ethereum`.** Every example below uses `base` because it is a choice; if
@@ -22,6 +22,18 @@ listing does not serve is refused with an HTTP 400 that lists the current set, a
 The 12 `fields` names are on every payload as `selection.fieldsAvailable`: `blockNumber`, `gasPrice`,
 `maxPriorityFeePerGas`, `chainId`, `blockTimestamp`, `baseFeePerGas`, `blockGasUsed`,
 `blockGasLimit`, `blockTransactionCount`, `nativeBalance`, `transactionCount`, `erc20Balance`.
+
+**Two more arguments ask about one account.** `address` (a 0x-prefixed 20-byte address) adds
+that account's rows beside the chain's own: `addressNativeBalance`, `addressTransactionCount`,
+`addressErc20Balance`. It makes the page **wider**, so it bills more output tokens; `fields` narrows
+it again. All-lowercase and all-uppercase are accepted as written; mixed case is an EIP-55 checksum
+and is verified, so a mistyped character is refused with an HTTP 400 before anything is bought
+rather than answered about a different account. `blocks` scans that account's transactions in the
+newest block (`addressBlocksScanned`, `addressTxCount`, `addressTxSent`, `addressTxReceived`, and
+`addressTxRowsWithheld` only when more than 50 match). **`blocks` is capped at 1 and needs an
+`address`**; anything else is refused with a 400 that says why. To read further back, ask for
+blocks by absolute number from the `blockNumber` the page returns. The `address*` field names are
+refused in `fields` unless an `address` is sent.
 
 Seller peer: `706fca9c0d0684c30f86209aae0c3565ce1aa69f`. Settlement is USDC on Base mainnet.
 
@@ -156,7 +168,7 @@ record does not print them; `--json` does:
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
   | jq '.peer.providerServiceCapabilities.openai.services | map_values(.supportedParameters)'
-# {"onchain-token-rankings": null, "sippar-chain-state": ["network","fields"]}
+# {"onchain-token-rankings": null, "sippar-chain-state": ["address","blocks","fields","network"]}
 ```
 
 ## Step 5, check the answer agreed with you

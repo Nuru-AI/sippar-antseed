@@ -58,14 +58,16 @@ Our peer advertises one API protocol:
 
 Post to `/v1/chat/completions` on your local buyer proxy. Any OpenAI-compatible client works, including the OpenAI SDKs — on their chat-completions path. `127.0.0.1:8377` is the default, not a fixed address: `antseed buyer start --port <number>` moves it, so read your own proxy's port rather than copying ours.
 
-## 3. The two arguments, and the one thing that destroys them
+## 3. The four arguments, and the one thing that destroys them
 
-`sippar-chain-state` accepts two top-level request-body parameters, both declared on the peer record as `supportedParameters`:
+`sippar-chain-state` accepts four top-level request-body parameters, all declared on the peer record as `supportedParameters`:
 
 | Parameter | Type | What it does |
 |---|---|---|
 | `network` | string | Selects which chain the page reports. **Omit it and you get ethereum-mainnet**, billed in full. |
 | `fields` | array of strings | Selects which rows you pay for. Omit it and you get every one. |
+| `address` | string, `0x` + 40 hex | Adds one account's rows: `addressNativeBalance`, `addressTransactionCount`, `addressErc20Balance`. Makes the page **wider**, so it bills more output tokens; `fields` narrows it again. |
+| `blocks` | integer | Scans that account's transactions in the newest block. **Capped at 1, and needs `address`.** |
 
 **The legal values are published by the listing itself, not frozen here.** Every served payload
 carries `selection.fieldsAvailable` — 12 names on 2026-09-24: `blockNumber`, `gasPrice`,
@@ -77,11 +79,20 @@ upstream: measured at **zero on the ledger**, against a response header that cla
 twice what a real answer bills. Cost a call from your own ledger — `antseed buyer activity`, or the
 app — never from `x-antseed-estimated-cost-usd`.
 
-Both are top-level keys in the request body, beside `model` and `messages`.
+**`address` is checked before anything is bought.** All-lowercase and all-uppercase are accepted as
+written; mixed case is an EIP-55 checksum and is verified, so a mistyped character is refused with
+an HTTP 400 rather than answered about a different account. `blocks` above 1, or without an
+`address`, is refused with a 400 that says why; to read further back, ask for blocks by absolute
+number from the `blockNumber` the page returns. With `blocks`, the page carries
+`addressBlocksScanned`, `addressTxCount`, `addressTxSent` and `addressTxReceived`; the matching
+transaction list is withheld, and `addressTxRowsWithheld` says so, when more than 50 match. The
+`address*` field names are refused in `fields` unless an `address` is sent.
+
+All four are top-level keys in the request body, beside `model` and `messages`.
 
 **They only arrive if your request shape matches ours.** The AntSeed buyer proxy translates between API shapes by normalising the body into a canonical request and rendering it again for the target. The canonical key list is fixed, and a parameter outside it is dropped. So:
 
-| Your client posts to | What happens | `network` and `fields` |
+| Your client posts to | What happens | the four arguments |
 |---|---|---|
 | `/v1/chat/completions` | delivered untouched | **arrive** |
 | `/v1/messages` (Anthropic shape) | translated to ours | **dropped** |
@@ -167,7 +178,7 @@ Announced parameters are not in the human-readable peer record. Read them with `
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
   | jq '.peer.providerServiceCapabilities.openai.services | map_values(.supportedParameters)'
-# {"onchain-token-rankings": null, "sippar-chain-state": ["network","fields"]}
+# {"onchain-token-rankings": null, "sippar-chain-state": ["address","blocks","fields","network"]}
 ```
 
 Measured against the live listing on 2026-09-24, antseed CLI 0.1.157, api-adapter 0.1.48: the same
