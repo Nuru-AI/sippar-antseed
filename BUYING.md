@@ -69,10 +69,14 @@ Post to `/v1/chat/completions` on your local buyer proxy. Any OpenAI-compatible 
 | `address` | string, `0x` + 40 hex | Adds one account's rows: `addressNativeBalance`, `addressTransactionCount`, `addressErc20Balance`. Makes the page **wider**, so it bills more output tokens; `fields` narrows it again. |
 | `blocks` | integer | Scans that account's transactions in the newest block. **Capped at 1, and needs `address`.** |
 
-**The legal values are published by the listing itself, not frozen here.** Every served payload
-carries `selection.fieldsAvailable` — 12 names on 2026-09-24: `blockNumber`, `gasPrice`,
-`maxPriorityFeePerGas`, `chainId`, `blockTimestamp`, `baseFeePerGas`, `blockGasUsed`,
-`blockGasLimit`, `blockTransactionCount`, `nativeBalance`, `transactionCount`, `erc20Balance`.
+**The legal values are published by the listing itself, not frozen here.** Every sliced payload
+carries `selection.fieldsAvailable`; read it rather than copying a list. On 2026-09-30 it held 20
+names: the 12 chain-level ones (`blockNumber`, `gasPrice`, `maxPriorityFeePerGas`, `chainId`,
+`blockTimestamp`, `baseFeePerGas`, `blockGasUsed`, `blockGasLimit`, `blockTransactionCount`,
+`nativeBalance`, `transactionCount`, `erc20Balance`), the 3 account ones (`addressNativeBalance`,
+`addressTransactionCount`, `addressErc20Balance`) and the 5 newest-block ones
+(`addressBlocksScanned`, `addressTxCount`, `addressTxSent`, `addressTxReceived`,
+`addressTxRowsWithheld`). Every one is a value QuickNode returns; the listing computes none.
 A `network` value the listing does not serve is refused with **HTTP 400 that lists every chain it
 does serve** — 20 of them on 2026-09-24, ethereum and base among them. That refusal buys nothing
 upstream: measured at **zero on the ledger**, against a response header that claimed a cost roughly
@@ -203,24 +207,99 @@ this document was written. It makes no network call and spends nothing. Last con
 api-adapter **0.1.48** with antseed CLI **0.1.157**; the script prints the version it actually
 loaded, so compare that line with this one.
 
-## 7. What the answers contain
+## 7. Reading the answer
 
-Both listings return structured data, never composed prose.
+Both listings answer with a markdown table, the same rows fenced as JSON beneath it, and a few
+notes. Code should parse the JSON. The table is for people.
 
-Both return a markdown table with the same rows fenced as JSON beneath it, plus explanatory notes.
-`sippar-chain-state` carries public chain facts read at request time; `onchain-token-rankings`
-carries the largest onchain token contracts by fully diluted value, with the attribution and caveats
-the upstream source requires.
+`sippar-chain-state` is **QuickNode's data**. We buy it per request, at the moment you ask, and pass
+it through unchanged; every page says so in `attribution`. `onchain-token-rankings` carries the largest
+onchain token contracts by fully diluted value, with the attribution and caveats its upstream source
+requires.
 
-**What `fields` actually saves.** You are billed per output token at the rate on the peer record, not
-per page, so what `fields` saves is measured in output tokens and not in pages. Measured on ethereum
-and base, 2026-09-24: a dropped `fields` costs **7.6x** what the same call costs with two rows
-named — but one row still costs about **13%** of the full page, because the notes, attribution and
-JSON envelope are most of a small answer. Narrowing saves a lot against the full page and very little
-against another narrow call. Read the rates themselves off the peer record; they change, so this
+### The envelope
+
+A `sippar-chain-state` page is one JSON object with these keys: `product`, `asOf`, `standing`,
+`scope`, `rows`, `counts`, `coverage`, `attribution`, `sourceNote`, `disclaimer`, `routing`, and
+`selection` on a page you narrowed with `fields`. Read these in code:
+
+- `routing`: `{"mode": …, "network": …, "confidence": …, "source": …}`, the same facts as the
+  routing line in §3. Check `routing.mode == "declared"` here rather than matching the prose line.
+- `coverage`: what the page does and does not claim: `valuation` (balances only, no USD
+  prices), `history`, `finality` and `ownership`. Read it before you draw a conclusion.
+- `counts`: `rowsConfigured`, `rowsAnswered`, `rowsFailed`, a one-line health check.
+- `selection`: `fields` you asked for, `fieldsAvailable`, and how many rows were not read.
+- `scope.network` is the full network id (`base-mainnet`); `routing.network` is the name
+  that selected it (`base`). World Chain is `world chain` in one and `worldchain-mainnet` in the
+  other, so compare networks after lower-casing and removing spaces and the `-mainnet` suffix.
+
+### One row
+
+| Key | Meaning |
+|---|---|
+| `id` | Stable row id, e.g. `chain.blockNumber`, `address.usdc`. It can carry a unit suffix (`chain.gasPriceWei`), so read the metric from `metric`, never from `id`. |
+| `metric` | The field name, one of `fieldsAvailable`. |
+| `target` | The address the row is about. There is no `address` key on a row. |
+| `targetLabel` | A label for a configured contract; `null` on an address you sent. |
+| `asset`, `assetAddress` | Token symbol and contract, on token rows; `null` otherwise. |
+| `unit`, `decimals` | Display unit, and the decimals `value` was scaled by (`null` when unscaled). |
+| `value` | Already human-readable, as a string. Do not divide it again. |
+| `valueRaw` | QuickNode's own integer, unscaled, as a string. Divide by `10^decimals` to get `value`. |
+| `ok`, `reason` | `ok: false` marks a row that could not be answered, and `reason` is a short code saying which absence it is. |
+
+**Three mistakes break consumers.** Keying by `metric` alone collapses rows, because
+`addressErc20Balance` and `erc20Balance` are one row per token; key by `(metric, target, asset)`.
+Dividing `value` again corrupts every number; use `value` as served, or `valueRaw` with `decimals`.
+Dropping failed rows hides part of the answer; keep them, since `ok: false` tells the reader which
+value is missing and why.
+
+`asOf` plus a row's `id` is the key to de-duplicate on when you sample the same page over time.
+
+### What the account fields mean
+
+- `addressTransactionCount` counts transactions the account sent, which is what QuickNode's
+  `eth_getTransactionCount` returns. A block explorer also counts incoming and token transfers, so its
+  number is higher (measured on Base: 520 here against 682 on the explorer). Label the source when you
+  compare them.
+- With no `address`, the page reads a fixed set of published protocol contracts (lending pools,
+  bridges, routers and wrapped native, labelled in `targetLabel`). They show where protocol liquidity
+  sits. Do not read them as a wallet; several routers hold zero by design.
+- **With an `address` but no `fields`, your account is added to that fixed set, so you pay for every
+  protocol row as well.** For a question about one account, name the fields:
+  `"fields": ["addressNativeBalance", "addressTransactionCount", "addressErc20Balance"]`.
+
+### What buyers build with it
+
+Slow indicators, mostly. Balances, positions and what it costs to transact. There are no prices and
+no history on the page.
+
+The common one is an account across chains: ask for the three `address*` fields on each chain and you
+see where the account holds native coin and tokens, and where it is active at all. Another is one
+chain right now: block height, gas, base fee, and how full the last block was (`blockGasUsed` against
+`blockGasLimit`). Run the same fields on all 20 chains in parallel and you can rank them by cost or
+activity. For change over time, sample on a schedule and compare `valueRaw` between samples; the
+page itself holds a single moment.
+
+To find where it is cheapest to move money, compute the cost of a plain transfer yourself:
+`21000 × (baseFeePerGas + maxPriorityFeePerGas)` in wei. Both inputs are on the page.
+
+Two things not to do. Don't add native balances across chains, because ETH on Base and BNB on BNB
+Chain are different assets. And don't expect a dollar total; you need your own price source for that.
+
+### What `fields` saves
+
+You are billed per output token at the rate on the peer record, not per page. Measured on ethereum
+and base, 2026-09-24: a dropped `fields` costs **7.6x** what the same call costs with two rows named,
+but one row still costs about **13%** of the full page, because the notes and the JSON envelope are
+most of a small answer. Read the rates themselves off the peer record; they change, so this
 repository does not print them.
 
-**Keep the notes.** They are part of the product. They are what stops a downstream model reading a correct outlier as corrupt data, which is a failure we have measured: handed a page verified against independent nodes, a weak model returned four confident accusations that the data was broken, and all four were wrong. One of them was a chain's genuine gas limit that simply looks absurd to anything that does not know that chain.
+### Keep the notes
+
+They stop a downstream model from reading a correct outlier as corrupt data. We have watched that
+happen: handed a page we had verified against independent nodes, a weak model came back with four
+confident accusations that the data was broken. All four were wrong. One was a chain's real gas
+limit, which looks absurd if you don't know that chain.
 
 `onchain-token-rankings` ignores request parameters by design and always returns the full page.
 

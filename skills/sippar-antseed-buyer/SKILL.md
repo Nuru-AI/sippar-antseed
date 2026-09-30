@@ -1,6 +1,6 @@
 ---
 name: sippar-antseed-buyer
-description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current public chain facts (block height, gas, native balances, token supplies) or the largest onchain tokens by fully diluted value, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, my arguments were dropped in translation, metadata.sippar, x-sippar-network, x-antseed-required-parameters.
+description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current chain data bought live from QuickNode (block height, gas, native and ERC-20 balances, one account's balances) or the largest onchain tokens by fully diluted value, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, my arguments were dropped in translation, metadata.sippar, x-sippar-network, x-antseed-required-parameters.
 ---
 
 # Buying from Sippar Onchain Data on AntSeed
@@ -11,7 +11,7 @@ Sippar serves two data listings on AntSeed. This skill carries the three things 
 
 | Model string | Returns | Accepts parameters |
 |---|---|---|
-| `sippar-chain-state` | live public chain facts, read at request time | `network`, `fields`, `address`, `blocks` |
+| `sippar-chain-state` | QuickNode's chain data, bought at the moment you ask and passed through unmodified | `network`, `fields`, `address`, `blocks` |
 | `onchain-token-rankings` | largest onchain tokens by fully diluted value | none, always the full page |
 
 **The default `network` is `ethereum`.** Every example below uses `base` because it is a choice; if
@@ -19,9 +19,11 @@ nothing reaches the seller you are served ethereum-mainnet and billed in full. 2
 on 2026-09-24 — ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle, unichain, ink,
 soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad — and a value the
 listing does not serve is refused with an HTTP 400 that lists the current set, at zero on the ledger.
-The 12 `fields` names are on every payload as `selection.fieldsAvailable`: `blockNumber`, `gasPrice`,
+The legal `fields` names are on every sliced payload as `selection.fieldsAvailable`; read them
+there rather than from a copy. On 2026-09-30 there were 20: `blockNumber`, `gasPrice`,
 `maxPriorityFeePerGas`, `chainId`, `blockTimestamp`, `baseFeePerGas`, `blockGasUsed`,
-`blockGasLimit`, `blockTransactionCount`, `nativeBalance`, `transactionCount`, `erc20Balance`.
+`blockGasLimit`, `blockTransactionCount`, `nativeBalance`, `transactionCount`, `erc20Balance`, plus
+the `address*` names below. Every one is a value QuickNode returns; the listing computes none.
 
 **Two more arguments ask about one account.** `address` (a 0x-prefixed 20-byte address) adds
 that account's rows beside the chain's own: `addressNativeBalance`, `addressTransactionCount`,
@@ -188,11 +190,24 @@ routing: mode=declared  network=base  confidence=n/a  source=network-field
 
 ## Reading the answer
 
-Both listings return a markdown table with the same rows fenced as JSON beneath it. **Pass the table through as it arrives rather than rebuilding it**, keep every field, and keep the explanatory notes and attribution.
+Both listings return a markdown table with the same rows fenced as JSON beneath it. **Parse the fenced JSON in code; pass the table through to a person as it arrives**, keep every field, and keep the explanatory notes and attribution.
 
-The notes are load-bearing. A correct value can look wrong to a model that does not know the chain it came from: one chain's genuine gas limit reads as absurd, and a verified page handed to a weak model came back with four confident accusations of corrupt data, all four false. The notes are what prevent that.
+Mistakes that break a consumer (the full schema is in BUYING.md §7):
 
-A row carrying a failure reason is already marked failed. Keep it rather than dropping it.
+- A row's subject is `target`. There is no `address` key on a row.
+- `value` is already human-readable (a string). `valueRaw` is QuickNode's unscaled integer; divide
+  only that by `10^decimals`. Never divide `value` again.
+- Token rows are one per asset. Key by `(metric, target, asset)`, never by `metric` alone.
+- `ok: false` plus a `reason` code marks an unanswered row. Keep it.
+- Check `routing.mode == "declared"` in the JSON before trusting which chain you got.
+- `addressTransactionCount` is transactions the account sent, so it is lower than a block
+  explorer's count, which includes incoming ones.
+- With no `address`, the balance rows are a fixed set of protocol contracts, never a wallet. With an
+  `address` and no `fields`, you also pay for all of those rows; name the `address*` fields instead.
+- No computed values, no USD prices, no history. The transfer cost of a chain is
+  `21000 × (baseFeePerGas + maxPriorityFeePerGas)` in wei, which you compute from the page.
+
+Keep the notes. A correct value can look wrong to a model that doesn't know the chain: one chain's real gas limit reads as absurd, and a verified page handed to a weak model came back with four confident accusations of corrupt data. All four were false.
 
 ## Cost
 

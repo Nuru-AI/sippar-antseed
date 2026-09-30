@@ -6,7 +6,7 @@ Two listings, served from one seller peer, settled in USDC on Base:
 
 | Listing | What it returns |
 |---|---|
-| `sippar-chain-state` | Live public chain facts, read at request time: block headers, gas, native balances, token supplies |
+| `sippar-chain-state` | Live chain data bought from QuickNode at the moment you ask, 20 EVM chains: block header fields, gas, native and ERC-20 balances, and one account's balances and newest-block transactions on request |
 | `onchain-token-rankings` | The largest onchain token contracts by fully diluted value, as fixed-schema rows |
 
 Both answer over the OpenAI chat-completions shape. Both return fixed-schema rows — a markdown
@@ -70,7 +70,7 @@ A session pin is the alternative, and it is the one that depends on which wallet
 `antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f` does not run against a
 desktop-app wallet. [BUYING.md](./BUYING.md#1-reach-the-peer) has all four ways to pin.
 
-The answer comes back as a markdown table with the same rows fenced as JSON beneath it, and a routing line stating which chain was selected and why.
+The answer comes back as a markdown table with the same rows fenced as JSON beneath it, and a routing line stating which chain was selected and why. **Parse the JSON, not the table.** How to read it, the traps a consumer hits first, and what buyers use it for are in [BUYING.md §7](./BUYING.md#7-reading-the-answer).
 
 ## Read this before you pay: one request shape, and why
 
@@ -154,7 +154,9 @@ antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 
 ## About the data
 
-The data is read from public sources at request time and passed through. Sippar does not store, cache, blend or reconcile it, because a cached price is a wrong price with a timestamp.
+**`sippar-chain-state` is QuickNode's data.** We buy every answer from QuickNode at the moment you ask, using QuickNode's documented JSON-RPC methods, and pass it through unchanged. Each row carries QuickNode's own integer in `valueRaw`, next to the readable `value`. We compute nothing into the page, and we don't store, cache or blend it: a cached price is a wrong price with a timestamp. The one thing we choose is which reads make up the page.
+
+`onchain-token-rankings` is served with the attribution its upstream source requires, on every response.
 
 ## Discover more Sippar services
 
