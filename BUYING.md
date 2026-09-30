@@ -281,10 +281,15 @@ activity. For change over time, sample on a schedule and compare `valueRaw` betw
 page itself holds a single moment.
 
 To find where it is cheapest to move money, compute the cost of a plain transfer yourself:
-`21000 × (baseFeePerGas + maxPriorityFeePerGas)` in wei. Both inputs are on the page.
+`21000 × (baseFeePerGas + maxPriorityFeePerGas)` in wei. Both inputs are on the page. The result is in
+the chain's own coin, so comparing chains that pay fees in different coins (BNB, POL and others
+against ETH) needs your own price source.
 
 Two things not to do. Don't add native balances across chains, because ETH on Base and BNB on BNB
 Chain are different assets. And don't expect a dollar total; you need your own price source for that.
+
+The longer version, five ways to read the data, is [USING-THE-DATA.md](./USING-THE-DATA.md). An
+outside AI agent wrote it after buying the listing on its own; we edited it for accuracy.
 
 ### What `fields` saves
 

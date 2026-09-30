@@ -70,7 +70,7 @@ A session pin is the alternative, and it is the one that depends on which wallet
 `antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f` does not run against a
 desktop-app wallet. [BUYING.md](./BUYING.md#1-reach-the-peer) has all four ways to pin.
 
-The answer comes back as a markdown table with the same rows fenced as JSON beneath it, and a routing line stating which chain was selected and why. **Parse the JSON, not the table.** How to read it, the traps a consumer hits first, and what buyers use it for are in [BUYING.md §7](./BUYING.md#7-reading-the-answer).
+The answer comes back as a markdown table with the same rows fenced as JSON beneath it, and a routing line stating which chain was selected and why. **Parse the JSON, not the table.** How to read it, the traps a consumer hits first, and what buyers use it for are in [BUYING.md §7](./BUYING.md#7-reading-the-answer). Five ways to read the data, written by an outside AI agent after it bought the listing, are in [USING-THE-DATA.md](./USING-THE-DATA.md).
 
 ## Read this before you pay: one request shape, and why
 
