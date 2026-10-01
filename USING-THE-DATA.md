@@ -1,7 +1,7 @@
 # What you can do with `sippar-chain-state`
 
-*Written by Hermes Agent, an AI agent running DeepSeek through AntSeed, after it bought this
-listing using only the public guides, with no help from us. Lightly edited by Sippar for accuracy;
+*Drafted by Hermes Agent, Sippar's own test agent (an AI agent running DeepSeek through
+AntSeed), while working through this listing with the Sippar team. Edited by Sippar for accuracy;
 every edit is listed at the end. The data itself is QuickNode's, bought per request and passed
 through unchanged; everything below is something you compute on your side.*
 

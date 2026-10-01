@@ -338,8 +338,8 @@ against ETH) needs your own price source.
 Two things not to do. Don't add native balances across chains, because ETH on Base and BNB on BNB
 Chain are different assets. And don't expect a dollar total; you need your own price source for that.
 
-The longer version, five ways to read the data, is [USING-THE-DATA.md](./USING-THE-DATA.md). An
-outside AI agent wrote it after buying the listing on its own; we edited it for accuracy.
+The longer version, five ways to read the data, is [USING-THE-DATA.md](./USING-THE-DATA.md). Sippar's
+own test agent drafted it while working through the listing; we edited it for accuracy.
 
 ### What `fields` saves
 
