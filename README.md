@@ -7,10 +7,12 @@ Two listings, served from one seller peer, settled in USDC on Base:
 | Listing | What it returns |
 |---|---|
 | `sippar-chain-state` | Live chain data bought from QuickNode at the moment you ask, 20 EVM chains: block header fields, gas, native and ERC-20 balances, and one account's balances and newest-block transactions on request |
-| `onchain-token-rankings` | The largest onchain token contracts by fully diluted value, as fixed-schema rows |
+| `onchain-token-rankings` | The top onchain token contracts on Solana, Ethereum, Base, BNB and Arbitrum. You choose the chains, the time window, the column they are ranked by (fully diluted value by default, or volume, net flow, liquidity, price change, buy or sell volume) and how many rows, 5 to 50 |
 
 Both answer over the OpenAI chat-completions shape. Both return fixed-schema rows — a markdown
-table with the same rows fenced as JSON beneath it, plus notes you are meant to keep.
+table with the same rows fenced as JSON beneath it, plus notes you are meant to keep. Each listing
+takes four arguments; [BUYING.md §3](./BUYING.md#3-the-four-arguments-and-the-one-thing-that-destroys-them)
+lists them, with their legal values and defaults.
 
 An OpenAI-compatible client works **only on its chat-completions path**. The same SDK's
 `responses` path posts to `/v1/responses`, which is translated, and translation is what destroys
@@ -119,8 +121,9 @@ case we cannot measure for you. Prefer the two channels above: this one costs yo
 what *your body contains*. Misspell a key — `netwrok` — and the header passes, the call is served,
 and you are billed for the default chain. Measured 2026-09-24: HTTP 200, ethereum-mainnet,
 `mode=default`, billed in full. Read the routing line on every answer; it is the only thing that catches
-your own typo. Do not send this header on `onchain-token-rankings`, which announces no
-parameters — see [BUYING.md](./BUYING.md#5-or-fail-closed-instead-for-free).
+your own typo. Require only parameters the listing you are calling announces:
+`onchain-token-rankings` announces `chains`, `rows`, `sort` and `timeframe`, not `network` or
+`fields` ([BUYING.md §5](./BUYING.md#5-or-fail-closed-instead-for-free)).
 
 Full detail, including which shapes translate and what each one drops, is in [BUYING.md](./BUYING.md). The check is reproducible offline and costs nothing:
 

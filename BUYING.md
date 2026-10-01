@@ -114,6 +114,51 @@ routing: mode=declared  network=base  confidence=n/a  source=network-field
 
 The `confidence` slot carries a number only when a value was inferred from your message text rather than taken from a field you set, which the published terms describe; on a declared or default serve it reads `n/a`.
 
+### `onchain-token-rankings` takes four arguments of its own
+
+`onchain-token-rankings` accepts four top-level request-body parameters, all declared on
+the peer record as `supportedParameters`. Every one is optional; omit all four and you get the default
+page: all five chains, a 24-hour window, ranked by fully diluted value, 25 rows.
+
+| Parameter | Type | Legal values | Default |
+|---|---|---|---|
+| `chains` | array of strings, or one comma-separated string | any of `solana`, `ethereum`, `base`, `bnb`, `arbitrum` | all five |
+| `timeframe` | string | `5m`, `10m`, `1h`, `6h`, `24h`, `7d`, `30d` | `24h` |
+| `sort` | string | `fdv`, `volume`, `netflow`, `liquidity`, `priceChange`, `buyVolume`, `sellVolume` | `fdv` |
+| `rows` | integer, 5 to 50 | a whole number from 5 to 50 | 25 |
+
+- `chains` narrows which chains are ranked together. Case and order do not matter, and a chain
+  named twice counts once.
+- `timeframe` is the window that volume, buy and sell volume, net flow and price change cover.
+  Fully diluted value, market cap and liquidity are read at the moment you ask, whichever window
+  you pick. The page names its window once, in `timeframe`.
+- `sort` picks the column the rows are ranked by, always largest first. Case does not matter
+  (`pricechange` is read as `priceChange`). Market cap is not a sort option.
+- `rows` sets how many ranked rows the page publishes. You pay per output token, as with
+  everything else here, so fewer rows cost less.
+
+**A value outside these is refused before anything is bought**, with an HTTP 400 whose message
+says what is accepted. To confirm what you were served, read `chainsCovered`, `timeframe`,
+`slots` (the row count) and `ranking.requestedSort` in the JSON. `requestedSort` uses the
+upstream's own column name, so `priceChange` reads `price_change DESC` there.
+
+```bash
+curl http://127.0.0.1:8377/v1/chat/completions \
+  -H 'content-type: application/json' \
+  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
+  -d '{
+    "model": "onchain-token-rankings",
+    "chains": ["base", "solana"],
+    "timeframe": "7d",
+    "sort": "volume",
+    "rows": 10,
+    "messages": [{"role": "user", "content": "top tokens"}]
+  }'
+```
+
+These four obey the same rule as the chain-state arguments above: they arrive on
+`/v1/chat/completions` and are dropped by a translation.
+
 ## 4. Two channels that survive a translation — and are SERVED
 
 If your client cannot post the chat-completions shape, you do not have to give up the arguments.
@@ -136,7 +181,11 @@ x-sippar-address: 0x…
 x-sippar-blocks: 1
 ```
 
-A header can only carry text, so `fields` is comma-separated there; in `metadata` it may be a list
+`onchain-token-rankings` reads its four the same way: `metadata.sippar.chains`, `.timeframe`,
+`.sort` and `.rows`, or the headers `x-sippar-chains`, `x-sippar-timeframe`, `x-sippar-sort` and
+`x-sippar-rows`.
+
+A header can only carry text, so `fields` and `chains` are comma-separated there; in `metadata` it may be a list
 or the same comma string. A top-level field, when it reaches us, still wins over both — these are
 the fallbacks for a shape that cannot deliver one, not a second way to override it.
 
@@ -168,10 +217,11 @@ ethereum-mainnet, `mode=default`, and billed as a normal served page**. The prox
 writes it only to its own log. §3's routing line is the only thing that catches your own typo, so
 read it on every answer.
 
-**Require only parameters the service announces.** The proxy treats a service with no announced
-parameters as supporting none of them, so requiring `network` on `onchain-token-rankings`, which
-announces none, refuses *every* call rather than some of them, and the refusal does not explain
-itself. It is not a lockout: **stop sending the header for that listing and calls resume
+**Require only parameters the service announces.** The proxy counts a required parameter the
+service does not announce as missing on every call, so requiring `network` on
+`onchain-token-rankings`, which announces `chains`, `rows`, `sort` and `timeframe` but not
+`network`, refuses *every* call rather than some of them, and the refusal does not explain itself.
+It is not a lockout: **drop the parameter the listing does not announce and calls resume
 immediately.** The wording is misleading in the other direction too — a translated call on
 `sippar-chain-state` is refused with *"Pinned seller does not advertise required parameter(s)"*.
 It does advertise them; the message is the proxy's, and what it means is that your request was about
@@ -182,7 +232,7 @@ Announced parameters are not in the human-readable peer record. Read them with `
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
   | jq '.peer.providerServiceCapabilities.openai.services | map_values(.supportedParameters)'
-# {"onchain-token-rankings": null, "sippar-chain-state": ["address","blocks","fields","network"]}
+# {"onchain-token-rankings": ["chains","rows","sort","timeframe"], "sippar-chain-state": ["address","blocks","fields","network"]}
 ```
 
 Measured against the live listing on 2026-09-24, antseed CLI 0.1.157, api-adapter 0.1.48: the same
@@ -213,9 +263,9 @@ Both listings answer with a markdown table, the same rows fenced as JSON beneath
 notes. Code should parse the JSON. The table is for people.
 
 `sippar-chain-state` is **QuickNode's data**. We buy it per request, at the moment you ask, and pass
-it through unchanged; every page says so in `attribution`. `onchain-token-rankings` carries the largest
-onchain token contracts by fully diluted value, with the attribution and caveats its upstream source
-requires.
+it through unchanged; every page says so in `attribution`. `onchain-token-rankings` carries the top
+onchain token contracts, ranked by fully diluted value unless you chose another `sort`, with the
+attribution and caveats its upstream source requires.
 
 ### The envelope
 
@@ -243,7 +293,7 @@ A `sippar-chain-state` page is one JSON object with these keys: `product`, `asOf
 | `targetLabel` | A label for a configured contract; `null` on an address you sent. |
 | `asset`, `assetAddress` | Token symbol and contract, on token rows; `null` otherwise. |
 | `unit`, `decimals` | Display unit, and the decimals `value` was scaled by (`null` when unscaled). |
-| `value` | Already human-readable, as a string. Do not divide it again. |
+| `value` | Already human-readable, as a string. Do not divide it again. It is the display form: for arithmetic, compute from `valueRaw` and `decimals` rather than parsing `value`. |
 | `valueRaw` | QuickNode's own integer, unscaled, as a string. Divide by `10^decimals` to get `value`. |
 | `ok`, `reason` | `ok: false` marks a row that could not be answered, and `reason` is a short code saying which absence it is. |
 
@@ -305,8 +355,6 @@ They stop a downstream model from reading a correct outlier as corrupt data. We 
 happen: handed a page we had verified against independent nodes, a weak model came back with four
 confident accusations that the data was broken. All four were wrong. One was a chain's real gas
 limit, which looks absurd if you don't know that chain.
-
-`onchain-token-rankings` ignores request parameters by design and always returns the full page.
 
 ## 8. Support
 

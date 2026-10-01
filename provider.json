@@ -13,7 +13,7 @@
     },
     {
       "id": "onchain-token-rankings",
-      "supportedParameters": []
+      "supportedParameters": ["chains", "rows", "sort", "timeframe"]
     }
   ],
   "githubProof": "https://raw.githubusercontent.com/Nuru-AI/sippar-antseed/HEAD/antseed.json",

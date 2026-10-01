@@ -1,6 +1,6 @@
 ---
 name: sippar-antseed-buyer
-description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current chain data bought live from QuickNode (block height, gas, native and ERC-20 balances, one account's balances) or the largest onchain tokens by fully diluted value, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, my arguments were dropped in translation, metadata.sippar, x-sippar-network, x-antseed-required-parameters.
+description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current chain data bought live from QuickNode (block height, gas, native and ERC-20 balances, one account's balances) or the top onchain tokens ranked by fully diluted value, volume, net flow, liquidity or price change, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, my arguments were dropped in translation, metadata.sippar, x-sippar-network, x-antseed-required-parameters.
 ---
 
 # Buying from Sippar Onchain Data on AntSeed
@@ -12,7 +12,7 @@ Sippar serves two data listings on AntSeed. This skill carries the three things 
 | Model string | Returns | Accepts parameters |
 |---|---|---|
 | `sippar-chain-state` | QuickNode's chain data, bought at the moment you ask and passed through unmodified | `network`, `fields`, `address`, `blocks` |
-| `onchain-token-rankings` | largest onchain tokens by fully diluted value | none, always the full page |
+| `onchain-token-rankings` | top onchain tokens, ranked by fully diluted value unless you choose another column | `chains`, `timeframe`, `sort`, `rows` |
 
 **The default `network` is `ethereum`.** Every example below uses `base` because it is a choice; if
 nothing reaches the seller you are served ethereum-mainnet and billed in full. 20 chains were served
@@ -36,6 +36,39 @@ newest block (`addressBlocksScanned`, `addressTxCount`, `addressTxSent`, `addres
 `address`**; anything else is refused with a 400 that says why. To read further back, ask for
 blocks by absolute number from the `blockNumber` the page returns. The `address*` field names are
 refused in `fields` unless an `address` is sent.
+
+**`onchain-token-rankings` takes four arguments of its own**, all optional, all top-level:
+
+- `chains`: any of `solana`, `ethereum`, `base`, `bnb`, `arbitrum`, as an array or one
+  comma-separated string. Default: all five.
+- `timeframe`: `5m`, `10m`, `1h`, `6h`, `24h`, `7d` or `30d`. Default `24h`. It is the window
+  volume, buy and sell volume, net flow and price change cover; fully diluted value, market cap and
+  liquidity are read at the moment you ask either way.
+- `sort`: `fdv`, `volume`, `netflow`, `liquidity`, `priceChange`, `buyVolume` or `sellVolume`,
+  always largest first, case-insensitive. Default `fdv`.
+- `rows`: a whole number from 5 to 50. Default 25. Fewer rows bill fewer output tokens.
+
+A value outside these is refused with an HTTP 400 that says what is accepted, before anything is
+bought. The JSON names what you were served in `chainsCovered`, `timeframe`, `slots` and
+`ranking.requestedSort` (in the upstream's spelling: `priceChange` reads `price_change DESC`).
+
+```bash
+curl http://127.0.0.1:8377/v1/chat/completions \
+  -H 'content-type: application/json' \
+  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
+  -d '{
+    "model": "onchain-token-rankings",
+    "chains": ["base", "solana"],
+    "timeframe": "7d",
+    "sort": "volume",
+    "rows": 10,
+    "messages": [{"role": "user", "content": "top tokens"}]
+  }'
+```
+
+They follow the same shape rule as the chain-state arguments (Step 2), and ride the same two
+fallback channels (Step 4) as `metadata.sippar.chains|timeframe|sort|rows` or
+`x-sippar-chains|timeframe|sort|rows`.
 
 Seller peer: `706fca9c0d0684c30f86209aae0c3565ce1aa69f`. Settlement is USDC on Base mainnet.
 
@@ -136,7 +169,7 @@ that cannot deliver one, not a second way to override it.
 not promised to**. The measurement is free, offline, reproducible, and fails loudly if the proxy
 moves — see the verification section of [BUYING.md](../../BUYING.md).
 
-## Step 4b, or fail closed instead — on `sippar-chain-state`, and NOT on `onchain-token-rankings`
+## Step 4b, or fail closed instead — requiring only what the listing announces
 
 Prefer Step 4. This header buys you a refusal, not an answer; take it only if you would rather be
 refused than served the wrong chain.
@@ -161,8 +194,11 @@ before you use the answer, not after.
 A translated call is refused with *"Pinned seller does not advertise required parameter(s)"*. It does
 advertise them — the wording is the proxy's, and it means your request was about to be translated.
 
-**Do not send it for `onchain-token-rankings`.** That service takes no parameters and announces none, and the proxy treats a service with no announced parameters as supporting none of them: every parameter you require counts as missing, so the peer is filtered out of selection or a pinned call returns `422 required_capability_unavailable` every time. The refusal does not explain itself. It is not a lockout: stop sending the header for
-that listing and calls resume immediately.
+**Do not require `network` or `fields` on `onchain-token-rankings`.** That listing announces
+`chains`, `rows`, `sort` and `timeframe`, and the proxy counts any required parameter the listing
+does not announce as missing: the peer is filtered out of selection, or a pinned call returns
+`422 required_capability_unavailable` every time. The refusal does not explain itself. It is not a
+lockout: drop the parameter that listing does not announce and calls resume immediately.
 
 The rule in one line: **require only parameters the service announces.** The human-readable peer
 record does not print them; `--json` does:
@@ -170,7 +206,7 @@ record does not print them; `--json` does:
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
   | jq '.peer.providerServiceCapabilities.openai.services | map_values(.supportedParameters)'
-# {"onchain-token-rankings": null, "sippar-chain-state": ["address","blocks","fields","network"]}
+# {"onchain-token-rankings": ["chains","rows","sort","timeframe"], "sippar-chain-state": ["address","blocks","fields","network"]}
 ```
 
 ## Step 5, check the answer agreed with you
