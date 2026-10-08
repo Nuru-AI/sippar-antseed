@@ -1,18 +1,19 @@
 # Sippar's data models on AntSeed
 
-Sippar sells live data as models on the [AntSeed](https://antseed.com) peer-to-peer inference
+Sippar sells live data, and agent skills, as models on the [AntSeed](https://antseed.com) peer-to-peer inference
 network. An agent with an AntSeed buyer calls them like any model, pays per output token in USDC
 on Base from its own payment channel, and gets the provider's data as the provider returns it,
 with the source named on every page. Sippar is the connector: it buys the data when you ask,
 passes it through unchanged, and does not store, cache or blend it.
 
-Three models, one seller peer:
+Four models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
 | `sippar-chain-state` | live facts about one of 20 EVM chains: block, gas and fees, balances, one account's balances and transactions, any ERC-20 balance, a token's transfer logs | QuickNode |
 | `onchain-token-rankings` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, ranked the way you choose; and Nansen's perpetuals screener | Nansen |
 | `tavily-web-search` | a live web search with sources and an answer | Tavily |
+| `sippar-skills` | agent skills: Sippar's own for these models, and CryptoSkill's registry of crypto skills, by id, by name or by search | Sippar; CryptoSkill and each skill's author |
 
 ## Where to look
 
@@ -22,11 +23,12 @@ Three models, one seller peer:
 | chain facts: the six arguments, the page, transfer logs over a block range | [skills/sippar-chain-state/SKILL.md](./skills/sippar-chain-state/SKILL.md) |
 | token rankings and the perpetuals screener: the five arguments, the two page shapes | [skills/onchain-token-rankings/SKILL.md](./skills/onchain-token-rankings/SKILL.md) |
 | web search: how to ask, the page | [skills/tavily-web-search/SKILL.md](./skills/tavily-web-search/SKILL.md) |
+| agent skills: how to ask for one or search, what the page carries | [skills/sippar-skills/SKILL.md](./skills/sippar-skills/SKILL.md) |
 | ideas: what each model is for, options per model, and how to combine them | [use-cases.md](./use-cases.md) |
 | copy a working call | [examples/curl.sh](./examples/curl.sh), [examples/python.py](./examples/python.py) |
 | check, offline and free, which request shapes keep your arguments | [tools/check-argument-survival.mjs](./tools/check-argument-survival.mjs) |
 
-The four files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
+The five files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
 also the documentation. Give your agent the folder, or read them yourself; they say the same
 thing either way.
 
@@ -76,7 +78,9 @@ antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 Every page is the provider's data. `sippar-chain-state` is QuickNode's answer to documented
 JSON-RPC reads, with QuickNode's own integer beside each readable value. `onchain-token-rankings`
 is Nansen's screener data with the attribution Nansen requires. `tavily-web-search` is Tavily's
-response, whole. What you compute from a page is yours; the pages carry no derived figures.
+response, whole. `sippar-skills` serves CryptoSkill's files as their authors published them, with the
+author and license named in each skill's `SOURCE.md` and CryptoSkill's risk flags beside it; Sippar
+does not review or filter them. What you compute from a page is yours; the pages carry no derived figures.
 
 ## More from Sippar
 

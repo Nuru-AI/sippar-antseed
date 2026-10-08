@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Working calls to Sippar's three models on AntSeed. Each one is a paid purchase from YOUR
+# Working calls to Sippar's four models on AntSeed. Each one is a paid purchase from YOUR
 # AntSeed buyer proxy (default 127.0.0.1:8377), billed per output token at the rate on the
 # peer record. Run one at a time; read the routing line on a chain-state answer before you
 # use it. Transport rules: skills/sippar-antseed-buyer/SKILL.md.
@@ -36,10 +36,12 @@ case "${1:-}" in
            "messages":[{"role":"user","content":"perps"}]}' ;;
   search)  # the last user message is the query; pass it as $2
     call "{\"model\":\"tavily-web-search\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
+  skill)   # one skill by id (e.g. chains/aave) or name, or a few words to search; pass it as $2
+    call "{\"model\":\"sippar-skills\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
   translated) # a client that must post the Anthropic shape: arguments ride metadata.sippar and survive
     curl -s "$PROXY/v1/messages" -H 'content-type: application/json' -H "x-antseed-pin-peer: $PEER" \
       -d '{"model":"sippar-chain-state","max_tokens":1024,
            "metadata":{"sippar":{"network":"base","fields":["blockNumber","gasPrice"]}},
            "messages":[{"role":"user","content":"chain state"}]}' ;;
-  *) echo "usage: $0 chain | account 0x… | logs | tokens | perps | search 'question' | translated"; exit 2 ;;
+  *) echo "usage: $0 chain | account 0x… | logs | tokens | perps | search 'question' | skill 'chains/aave' | translated"; exit 2 ;;
 esac

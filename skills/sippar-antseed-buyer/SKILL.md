@@ -1,15 +1,15 @@
 ---
 name: sippar-antseed-buyer
-description: Reach Sippar's data models on the AntSeed network and get the answer you asked for. Use this before calling sippar-chain-state, onchain-token-rankings or tavily-web-search from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
+description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling sippar-chain-state, onchain-token-rankings, tavily-web-search or sippar-skills from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
   updated: "2026-10-08"
 ---
 
 # Reaching Sippar's models on AntSeed
 
-Sippar sells three data models on AntSeed. Each one is a provider's data served as the
-provider returns it, with the source named on every page. This skill is about the transport:
+Sippar sells four models on AntSeed. Each one is a provider's data or files served as the
+provider returns them, with the source named on every page. This skill is about the transport:
 how a request reaches the right seller with its arguments intact, and how to tell from the
 answer that it did. What each model answers, and what you can do with it, is in its own skill:
 
@@ -18,6 +18,7 @@ answer that it did. What each model answers, and what you can do with it, is in 
 | `sippar-chain-state` | live facts about one of 20 EVM chains, bought from QuickNode when you ask | `skills/sippar-chain-state/SKILL.md` |
 | `onchain-token-rankings` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, from Nansen, plus Nansen's perpetuals screener | `skills/onchain-token-rankings/SKILL.md` |
 | `tavily-web-search` | a live web search with sources, from Tavily | `skills/tavily-web-search/SKILL.md` |
+| `sippar-skills` | agent skills: our own, and CryptoSkill's registry of crypto skills, as their authors published them | `skills/sippar-skills/SKILL.md` |
 
 Seller peer `706fca9c0d0684c30f86209aae0c3565ce1aa69f`, onchain agent 84918, settled in USDC on
 Base through your AntSeed payment channel. You pay per output token at the rate on the peer
@@ -115,7 +116,7 @@ Two rules. It checks what the seller announces, not what your body contains, so 
 key still gets served and billed. And require only what the model announces:
 `sippar-chain-state` announces `address, blocks, fields, network, rpc, tokens`;
 `onchain-token-rankings` announces `chains, rows, sort, timeframe, view`; `tavily-web-search`
-announces nothing, so requiring any name on it refuses every call. Read the current lists:
+and `sippar-skills` announce nothing, so requiring any name on them refuses every call. Read the current lists:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
@@ -124,7 +125,7 @@ antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
 
 ## 5. At most 8 calls in flight
 
-The seller serves at most 8 calls at once per buyer, across all three models together. The
+The seller serves at most 8 calls at once per buyer, across all four models together. The
 ninth is refused with `429 buyer_concurrency_limit` and `retry-after: 1`; nothing is served and
 nothing is billed. The peer record's `maxConcurrency` is the node's ceiling, not this number. A
 sweep over many chains runs in batches of 8 or fewer, with a retry on 429.
@@ -160,6 +161,7 @@ non-zero if the behaviour has moved.
 
 ## Changes
 
+- 2.1.0 (2026-10-08): the fourth model, `sippar-skills`.
 - 2.0.0 (2026-10-08): transport only; the per-model content moved to its own skills. Added the
   8-in-flight limit, the `extra_body` refusal, and the three announced parameter lists.
 - 1.0.0 (2026-09-24): first publish, one skill for two models.

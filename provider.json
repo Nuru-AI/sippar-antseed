@@ -18,6 +18,10 @@
     {
       "id": "tavily-web-search",
       "supportedParameters": []
+    },
+    {
+      "id": "sippar-skills",
+      "supportedParameters": []
     }
   ],
   "githubProof": "https://raw.githubusercontent.com/Nuru-AI/sippar-antseed/HEAD/antseed.json",

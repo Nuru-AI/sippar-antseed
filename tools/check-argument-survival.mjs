@@ -22,7 +22,7 @@
  *      key list is closed (model, messages/input, instructions, max_tokens,
  *      temperature, top_p, stop, tools, tool_choice, metadata, user). A key
  *      outside that list has nowhere to live and is dropped. Case D tests the
- *      exact pair BUYING.md's table asserts, and case D2 tests the reverse, so
+ *      exact pair the buyer skill warns about, and case D2 tests the reverse, so
  *      the loss is not a property of one shape or one direction.
  *   3. Two channels do cross a translation: request HEADERS, and the `metadata`
  *      object. Every Sippar model reads both, in a fixed order: a top-level
@@ -41,7 +41,7 @@
  * Usage:  node tools/check-argument-survival.mjs
  * Exit:   0 when the observed behaviour matches what is written above,
  *         1 when it has CHANGED, which is the interesting outcome and means the
- *           guidance in BUYING.md needs re-reading,
+ *           guidance in the skills needs re-reading,
  *         2 when no AntSeed install could be found to test against.
  */
 import { existsSync, readFileSync } from 'node:fs';
@@ -133,7 +133,7 @@ const CASES = [
     expect: { headerNetwork: 'base' },
   },
   {
-    name: 'D. openai-responses shape to an openai-chat seller (the row BUYING.md asserts)',
+    name: 'D. openai-responses shape to an openai-chat seller (the shape the buyer skill warns about)',
     path: '/v1/responses',
     body: responsesBody,
     from: 'openai-responses',

@@ -55,6 +55,20 @@ Tavily's five results and its answer, with the URL of each result.
 **Finding an identifier to use elsewhere.** A contract address, a token's chain, a protocol's
 official page: search first, then verify on chain with `sippar-chain-state`.
 
+## sippar-skills
+
+**Before acting on a protocol.** Ask for its skill by id (`chains/aave`) or by its exact name
+(`aave`): the author's instructions, the source and license, and CryptoSkill's risk flags, in one
+page. Read the flags before your agent follows the skill.
+
+**Finding a skill for a task.** Two or three keywords, not a sentence (`aave lending`, `USDC bridge`),
+return the matching registry entries; ask for the one you want by its name, or by its id built as
+`category/name` from the entry's own fields.
+
+**Onboarding an agent without GitHub.** Ask for `sippar-antseed-buyer` and then the skill for the
+model you need (`sippar-chain-state`, `onchain-token-rankings`, `tavily-web-search`), all through
+AntSeed itself.
+
 ## Combinations
 
 Each is a sequence of calls. The value named in one page goes into the next request.
@@ -76,6 +90,13 @@ Each is a sequence of calls. The value named in one page goes into the next requ
 6. **News plus the chain.** `tavily-web-search` for what is being said about a protocol, then
    `sippar-chain-state` with no `address` on its chain to see what its published contracts
    hold now.
+7. **A protocol's skill, then its chain.** `sippar-skills` with the protocol's id for how it
+   works and which contracts it names; then `sippar-chain-state` on that chain with no
+   `address`, or with `rpc` on one of those contracts.
+8. **A task's skills, then the market.** `sippar-skills` with two or three keywords for the task; then
+   `onchain-token-rankings` for the chain the chosen skill works on.
+9. **Learn the call, then make it.** `sippar-skills` with `sippar-chain-state` for the
+   arguments; then the `sippar-chain-state` call it describes.
 
 ## What the pages are not
 
