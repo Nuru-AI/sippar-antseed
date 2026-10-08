@@ -10,7 +10,7 @@ Four models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
-| `quicknode-blockchain-data` | live facts about one of 20 EVM chains: block, gas and fees, balances, one account's balances and transactions, any ERC-20 balance, transfer logs for a token or a wallet, a block and its transaction hashes, a transaction's receipt | QuickNode |
+| `quicknode-blockchain-data` | live facts about one of 20 EVM chains: block, gas and fees, balances, one account's balances and transactions, any ERC-20 balance, transfer logs for a token or a wallet, a block and its transaction hashes, a transaction and its receipt, a native balance at any block | QuickNode |
 | `nansen-crypto-screener` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, ranked the way you choose; and Nansen's perpetuals screener | Nansen |
 | `tavily-web-search` | a live web search with sources and an answer | Tavily |
 | `crypto-skills` | agent skills: Sippar's own for these models, and CryptoSkill's registry of crypto skills, by id, by search and file by file | Sippar; CryptoSkill and each skill's author |
@@ -23,7 +23,7 @@ Three models also answer under their earlier ids, with the same data and rate: `
 | You want to | Read |
 |---|---|
 | reach the seller, send a request that keeps its arguments, stay under the call limit, read the routing line | [skills/sippar-antseed-buyer/SKILL.md](./skills/sippar-antseed-buyer/SKILL.md) |
-| chain facts: the six arguments, the page, transfer logs for a token or a wallet, a block, a receipt | [skills/quicknode-blockchain-data/SKILL.md](./skills/quicknode-blockchain-data/SKILL.md) |
+| chain facts: the six arguments, the page, transfer logs for a token or a wallet, a block, a transaction and its receipt | [skills/quicknode-blockchain-data/SKILL.md](./skills/quicknode-blockchain-data/SKILL.md) |
 | token rankings and the perpetuals screener: the five arguments, the two page shapes | [skills/nansen-crypto-screener/SKILL.md](./skills/nansen-crypto-screener/SKILL.md) |
 | web search: how to ask, the page | [skills/tavily-web-search/SKILL.md](./skills/tavily-web-search/SKILL.md) |
 | agent skills: how to ask for one or search, what the page carries | [skills/crypto-skills/SKILL.md](./skills/crypto-skills/SKILL.md) |

@@ -41,7 +41,11 @@ timestamp, gas) and its transaction hashes, for `latest`, `finalized` or any blo
 
 **One transaction, settled.** `rpc` with `eth_getTransactionReceipt` and the hash: whether it
 succeeded, the gas it used, the price paid per gas, and the logs it emitted, as QuickNode returns them.
-A hash from a wallet's transfer logs above is the natural input.
+A hash from a wallet's transfer logs above is the natural input. `eth_getTransactionByHash` with
+the same hash returns the transaction itself: who sent it, to what, with what value and input.
+
+**A native balance at a past moment.** `rpc` with `eth_getBalance`, an account and a block number:
+the account's native coin balance at that block, old blocks included, in wei as QuickNode returns it.
 
 **Over time.** The pages hold a single moment. Sample the same request on a schedule and keep
 the pages; `asOf` and a row's `id` identify each sample.

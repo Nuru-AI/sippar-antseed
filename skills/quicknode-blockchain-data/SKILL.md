@@ -1,8 +1,8 @@
 ---
 name: quicknode-blockchain-data
-description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, and a transaction's receipt. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, transaction receipt, rpc on AntSeed, sippar-chain-state, which chains does quicknode-blockchain-data serve.
+description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, a transaction's receipt, a transaction itself, and an account's native balance at any block. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, eth_getTransactionByHash, eth_getBalance, balance at a past block, transaction receipt, transaction by hash, rpc on AntSeed, sippar-chain-state, which chains does quicknode-blockchain-data serve.
 metadata:
-  version: "3.0.0"
+  version: "3.2.0"
   updated: "2026-10-08"
 ---
 
@@ -27,6 +27,8 @@ answers with the same data, arguments and rate.
 | A token's transfer logs, or every token a wallet sent or received | the `rpc` answer, QuickNode's reply to `eth_getLogs` |
 | A block's header and its transaction hashes | the `rpc` answer, QuickNode's reply to `eth_getBlockByNumber` |
 | One transaction's receipt: status, gas used, effective gas price, its logs | the `rpc` answer, QuickNode's reply to `eth_getTransactionReceipt` |
+| One transaction itself: from, to, value, input, nonce, block | the `rpc` answer, QuickNode's reply to `eth_getTransactionByHash` |
+| An account's native balance at any block, including old ones | the `rpc` answer, QuickNode's reply to `eth_getBalance` |
 
 20 chains on 2026-10-08: ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle,
 unichain, ink, soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad. A
@@ -43,7 +45,7 @@ All six are optional top-level keys, all announced in `supportedParameters`.
 | `address` | A `0x` + 40 hex account. Adds that account's three rows beside the chain's. Makes the page wider, so name `fields` to keep it narrow. Mixed case is checked as an EIP-55 checksum before anything is bought. |
 | `blocks` | With `address`: scan that account's transactions in the newest block. Capped at 1; older blocks are not served by this field. |
 | `tokens` | With `address`: up to 10 ERC-20 contracts, as a list or a comma string. Two rows per contract, the balance in the token's smallest unit and the contract's own `decimals()`. A contract that does not answer shows as failed, never as zero. A contract already on the chain's own token list is not read here: sent alone it is refused free with a note; sent beside other contracts it is silently left out. For those, ask for `addressErc20Balance` in `fields` instead. |
-| `rpc` | One read-only QuickNode command, answered as QuickNode returns it: `eth_getLogs` (transfer logs), `eth_getBlockByNumber` (a block) or `eth_getTransactionReceipt` (a transaction's receipt). Send it alone, with `network` for a chain other than Ethereum. |
+| `rpc` | One read-only QuickNode command, answered as QuickNode returns it: `eth_getLogs` (transfer logs), `eth_getBlockByNumber` (a block), `eth_getTransactionReceipt` (a receipt), `eth_getTransactionByHash` (a transaction) or `eth_getBalance` (a native balance at a block). Send it alone, with `network` for a chain other than Ethereum. |
 
 Example, two fields on Base:
 
@@ -66,9 +68,12 @@ Through a translating client, the same arguments go under `metadata.sippar` or a
 
 ## `rpc`: one QuickNode command
 
-Three commands are served, each read-only and answered exactly as QuickNode returns it under a line
-saying what was read and when. Any other method, and every command that writes, is refused free
-before anything is bought. The `rpc` object may be at most 1,000 bytes.
+Read-only QuickNode commands, opened one at a time, each answered exactly as QuickNode returns it
+under a line saying what was read and when. On 2026-10-08 there were five: `eth_getLogs`,
+`eth_getBlockByNumber`, `eth_getTransactionReceipt`, `eth_getTransactionByHash`, `eth_getBalance`. **The live list is
+in the refusal:** a command the listing does not serve is refused free with a message naming every
+command it does serve, so send one when you need to know. Every command that writes is refused. The
+`rpc` object may be at most 1,000 bytes.
 
 ### `eth_getLogs`: transfer logs for a token, or for a wallet
 
@@ -120,6 +125,8 @@ wallet's 40 hex characters. Here, transfers to `0xd8da6bf2…6045`:
 - Exactly two params: the block (`latest`, `earliest`, `safe`, `finalized`, or a `0x` block
   number) and `false`. The block comes back with its transaction hashes, not full transactions;
   anything else is refused free.
+- A block that does not exist yet (a number past the chain's head) comes back as QuickNode's `null`,
+  with a line saying the network has no block with that number yet.
 - **When the block is wider than one page**, the header (`number`, `hash`, `timestamp` and every
   other field) is whole and the transaction hashes are cut to the first that fit, in QuickNode's
   order, with a line above the JSON saying how many there were.
@@ -139,6 +146,38 @@ wallet's 40 hex characters. Here, transfers to `0xd8da6bf2…6045`:
   QuickNode returns them.
 - **When the receipt is wider than one page**, every field is whole except `logs`, which is cut to
   the first that fit, in QuickNode's order, with a line above the JSON saying how many there were.
+
+### `eth_getTransactionByHash`: one transaction
+
+```json
+{"model": "quicknode-blockchain-data", "network": "ethereum",
+ "rpc": {"method": "eth_getTransactionByHash",
+         "params": ["0x<the transaction hash: 64 hex characters>"]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
+
+- Exactly one param: the transaction hash. Anything else is refused free.
+- The transaction comes back as QuickNode returns it: `from`, `to`, `value`, `input`, `nonce`,
+  `blockNumber` and the rest.
+- **When `input` is too long for one page**, every other field is whole and `input` is served as an
+  exact slice of QuickNode's string. A line above the JSON says which characters this page holds
+  and what to send next: the same request with `"inputFrom": <number>` inside `rpc`. The slices,
+  joined in order, are the whole value.
+
+### `eth_getBalance`: an account's native balance at a block
+
+```json
+{"model": "quicknode-blockchain-data", "network": "ethereum",
+ "rpc": {"method": "eth_getBalance",
+         "params": ["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "0xe4e1c0"]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
+
+- Exactly two params: the account (`0x` and 40 hex characters) and the block (`latest`, `earliest`,
+  `safe`, `finalized`, or a `0x` block number). `pending`, a decimal number or a block object is
+  refused free.
+- Old blocks work: the example asks for block 15,000,000 (`0xe4e1c0`).
+- The answer is QuickNode's single hex quantity, in wei, unchanged.
 
 ## Reading the page
 
@@ -174,6 +213,9 @@ refusal bills nothing on an open channel.
 
 ## Changes
 
+- 3.2.0 (2026-10-08): `eth_getBalance`, an account's native balance at any block.
+- 3.1.0 (2026-10-08): `eth_getTransactionByHash`, with long `input` served in slices; where to read
+  the live command list.
 - 3.0.0 (2026-10-08): the model is `quicknode-blockchain-data` (the old id `sippar-chain-state`
   still answers). `rpc` adds wallet-filtered `eth_getLogs`, `eth_getBlockByNumber` and
   `eth_getTransactionReceipt`.
