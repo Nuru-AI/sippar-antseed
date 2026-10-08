@@ -47,6 +47,11 @@ the same hash returns the transaction itself: who sent it, to what, with what va
 **A native balance at a past moment.** `rpc` with `eth_getBalance`, an account and a block number:
 the account's native coin balance at that block, old blocks included, in wei as QuickNode returns it.
 
+**Native coin a contract moved.** `rpc` with `trace_filter`, the wallet in `toAddress` (received) or
+`fromAddress` (sent), a block range and a `count`: the calls and internal transfers that touched the
+wallet, including ETH a router or bridge paid it, which no token log records. Wide answers resume
+with `after`.
+
 **Over time.** The pages hold a single moment. Sample the same request on a schedule and keep
 the pages; `asOf` and a row's `id` identify each sample.
 
