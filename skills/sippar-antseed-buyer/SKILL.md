@@ -1,8 +1,8 @@
 ---
 name: sippar-antseed-buyer
-description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling sippar-chain-state, onchain-token-rankings, tavily-web-search or sippar-skills from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
+description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search or crypto-skills from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
   updated: "2026-10-08"
 ---
 
@@ -15,10 +15,14 @@ answer that it did. What each model answers, and what you can do with it, is in 
 
 | Model string | What it answers | Skill |
 |---|---|---|
-| `sippar-chain-state` | live facts about one of 20 EVM chains, bought from QuickNode when you ask | `skills/sippar-chain-state/SKILL.md` |
-| `onchain-token-rankings` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, from Nansen, plus Nansen's perpetuals screener | `skills/onchain-token-rankings/SKILL.md` |
-| `tavily-web-search` | a live web search with sources, from Tavily | `skills/tavily-web-search/SKILL.md` |
-| `sippar-skills` | agent skills: our own, and CryptoSkill's registry of crypto skills, as their authors published them | `skills/sippar-skills/SKILL.md` |
+| `quicknode-blockchain-data` | live facts about one of 20 EVM chains, bought from QuickNode when you ask | the `quicknode-blockchain-data` skill |
+| `nansen-crypto-screener` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, from Nansen, plus Nansen's perpetuals screener | the `nansen-crypto-screener` skill |
+| `tavily-web-search` | a live web search with sources, from Tavily | the `tavily-web-search` skill |
+| `crypto-skills` | agent skills: our own, and CryptoSkill's registry of crypto skills, as their authors published them. Send a skill name, an id or two or three keywords as the message, never a sentence | the `crypto-skills` skill |
+
+Three models also answer under their earlier ids, with the same data, arguments and rate:
+`sippar-chain-state` (now `quicknode-blockchain-data`), `onchain-token-rankings` (now
+`nansen-crypto-screener`) and `sippar-skills` (now `crypto-skills`). Use the new ids.
 
 Seller peer `706fca9c0d0684c30f86209aae0c3565ce1aa69f`, onchain agent 84918, settled in USDC on
 Base through your AntSeed payment channel. You pay per output token at the rate on the peer
@@ -38,7 +42,7 @@ x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 ```
 
 The other ways: put the seller address in the model string
-(`"model": "0x706FCA9C0d0684C30F86209AAe0c3565cE1aa69F@sippar-chain-state"`), set a session pin
+(`"model": "0x706FCA9C0d0684C30F86209AAe0c3565cE1aa69F@quicknode-blockchain-data"`), set a session pin
 with the CLI (`antseed buyer connection set --peer 706fca9c…`, bare id without `0x`), or pick
 `Sippar Onchain Data` on the desktop app's Discover screen. If your wallet belongs to the desktop
 app, most `antseed buyer` commands will not run against it; pin from the app or per request.
@@ -63,7 +67,7 @@ curl http://127.0.0.1:8377/v1/chat/completions \
   -H 'content-type: application/json' \
   -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
   -d '{
-    "model": "sippar-chain-state",
+    "model": "quicknode-blockchain-data",
     "network": "base",
     "fields": ["blockNumber", "gasPrice"],
     "messages": [{"role": "user", "content": "chain state"}]
@@ -114,9 +118,9 @@ unaffected. It buys you a refusal, not an answer, so prefer section 3.
 
 Two rules. It checks what the seller announces, not what your body contains, so a misspelled
 key still gets served and billed. And require only what the model announces:
-`sippar-chain-state` announces `address, blocks, fields, network, rpc, tokens`;
-`onchain-token-rankings` announces `chains, rows, sort, timeframe, view`; `tavily-web-search`
-and `sippar-skills` announce nothing, so requiring any name on them refuses every call. Read the current lists:
+`quicknode-blockchain-data` announces `address, blocks, fields, network, rpc, tokens`;
+`nansen-crypto-screener` announces `chains, rows, sort, timeframe, view`; `tavily-web-search`
+and `crypto-skills` announce nothing, so requiring any name on them refuses every call. Read the current lists:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
@@ -132,7 +136,7 @@ sweep over many chains runs in batches of 8 or fewer, with a retry on 429.
 
 ## 6. Read the routing line before you use the answer
 
-Every `sippar-chain-state` page carries a routing line, and the same facts under `routing` in
+Every `quicknode-blockchain-data` page carries a routing line, and the same facts under `routing` in
 its JSON:
 
 ```
@@ -161,7 +165,9 @@ non-zero if the behaviour has moved.
 
 ## Changes
 
-- 2.1.0 (2026-10-08): the fourth model, `sippar-skills`.
+- 2.2.0 (2026-10-08): the models are named after their providers; the earlier ids still answer.
+  Skills are referred to by name.
+- 2.1.0 (2026-10-08): the fourth model, `sippar-skills` (now `crypto-skills`).
 - 2.0.0 (2026-10-08): transport only; the per-model content moved to its own skills. Added the
   8-in-flight limit, the `extra_body` refusal, and the three announced parameter lists.
 - 1.0.0 (2026-09-24): first publish, one skill for two models.

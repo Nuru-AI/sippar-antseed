@@ -4,7 +4,7 @@ Each call is a paid purchase from YOUR AntSeed buyer proxy, billed per output to
 rate on the peer record. Use the chat-completions path only: the SDK's `responses` path is
 translated by the proxy and your arguments are dropped. `extra_body` is flattened into the
 request body by the SDK, which is exactly the top-level shape the models read.
-Transport rules: skills/sippar-antseed-buyer/SKILL.md.
+Transport rules: the sippar-antseed-buyer skill.
 """
 import os
 from openai import OpenAI
@@ -17,7 +17,7 @@ client = OpenAI(base_url=os.environ.get("SIPPAR_ANTSEED_PROXY", "http://127.0.0.
 def chain_state(network: str, fields: list[str], **more) -> str:
     """Two fields on one chain; `more` may carry address, blocks, tokens or rpc."""
     r = client.chat.completions.create(
-        model="sippar-chain-state",
+        model="quicknode-blockchain-data",
         messages=[{"role": "user", "content": "chain state"}],
         extra_body={"network": network, "fields": fields, **more},
     )
@@ -26,7 +26,7 @@ def chain_state(network: str, fields: list[str], **more) -> str:
 
 def top_tokens(chains: list[str], timeframe: str = "24h", sort: str = "fdv", rows: int = 25) -> str:
     r = client.chat.completions.create(
-        model="onchain-token-rankings",
+        model="nansen-crypto-screener",
         messages=[{"role": "user", "content": "top tokens"}],
         extra_body={"chains": chains, "timeframe": timeframe, "sort": sort, "rows": rows},
     )
@@ -36,7 +36,7 @@ def top_tokens(chains: list[str], timeframe: str = "24h", sort: str = "fdv", row
 def perp_screener() -> str:
     """`view` goes alone: none of the ranking arguments beside it."""
     r = client.chat.completions.create(
-        model="onchain-token-rankings",
+        model="nansen-crypto-screener",
         messages=[{"role": "user", "content": "perps"}],
         extra_body={"view": "perp-screener"},
     )
@@ -53,9 +53,9 @@ def web_search(question: str) -> str:
 
 
 def skill(request: str) -> str:
-    """A skill by id ("chains/aave") or exact name, or a few words to search. No arguments."""
+    """A CryptoSkill id ("chains/aave"), one of Sippar's skill names, or two or three keywords to search."""
     r = client.chat.completions.create(
-        model="sippar-skills",
+        model="crypto-skills",
         messages=[{"role": "user", "content": request}],
     )
     return r.choices[0].message.content

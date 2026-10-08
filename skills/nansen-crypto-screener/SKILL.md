@@ -1,17 +1,18 @@
 ---
-name: onchain-token-rankings
-description: Buy the top onchain token contracts on Solana, Ethereum, Base, BNB and Arbitrum from Sippar's onchain-token-rankings model on AntSeed, ranked by fully diluted value, volume, net flow, liquidity, price change, buy or sell volume over a window you choose, served with Nansen's attribution. Also Nansen's Hyperliquid perpetuals screener through the view argument. Triggers on - top tokens, biggest tokens on Base, token rankings, FDV ranking, volume leaders on Solana, net flow, perp screener, perpetuals on Hyperliquid, view perp-screener.
+name: nansen-crypto-screener
+description: Buy the top onchain token contracts on Solana, Ethereum, Base, BNB and Arbitrum from Sippar's nansen-crypto-screener model on AntSeed, ranked by fully diluted value, volume, net flow, liquidity, price change, buy or sell volume over a window you choose, served with Nansen's attribution. Also Nansen's Hyperliquid perpetuals screener through the view argument. Triggers on - top tokens, biggest tokens on Base, token rankings, FDV ranking, volume leaders on Solana, net flow, perp screener, perpetuals on Hyperliquid, view perp-screener, onchain-token-rankings.
 metadata:
-  version: "2.0.0"
+  version: "3.0.0"
   updated: "2026-10-08"
 ---
 
-# onchain-token-rankings
+# nansen-crypto-screener
 
 The top token contracts across five chains, from Nansen, with the attribution Nansen requires
 on every page. Transport (pin, request shape, the two surviving channels, the 8-in-flight
-limit) is in `skills/sippar-antseed-buyer/SKILL.md`; read it first. Model string:
-`onchain-token-rankings`.
+limit) is in the `sippar-antseed-buyer` skill; read it first. Model string:
+`nansen-crypto-screener`.
+The earlier id `onchain-token-rankings` still answers with the same data, arguments and rate.
 
 ## What it answers
 
@@ -41,14 +42,14 @@ you pick. A value outside these is refused with a free 400 that says what is acc
 Example, ten rows by volume on Base and Solana over a week:
 
 ```json
-{"model": "onchain-token-rankings", "chains": ["base", "solana"], "timeframe": "7d",
+{"model": "nansen-crypto-screener", "chains": ["base", "solana"], "timeframe": "7d",
  "sort": "volume", "rows": 10, "messages": [{"role": "user", "content": "top tokens"}]}
 ```
 
 Example, the perpetuals screener:
 
 ```json
-{"model": "onchain-token-rankings", "view": "perp-screener",
+{"model": "nansen-crypto-screener", "view": "perp-screener",
  "messages": [{"role": "user", "content": "perps"}]}
 ```
 
@@ -83,5 +84,7 @@ bills nothing on an open channel.
 
 ## Changes
 
+- 3.0.0 (2026-10-08): the model is `nansen-crypto-screener` (the old id `onchain-token-rankings`
+  still answers).
 - 2.0.0 (2026-10-08): own skill. Added `view: perp-screener` and its page shape, and the
   page-count keys.

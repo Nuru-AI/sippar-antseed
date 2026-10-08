@@ -8,11 +8,11 @@
   "serviceApiProtocols": ["openai-chat-completions"],
   "services": [
     {
-      "id": "sippar-chain-state",
+      "id": "quicknode-blockchain-data",
       "supportedParameters": ["address", "blocks", "fields", "network", "rpc", "tokens"]
     },
     {
-      "id": "onchain-token-rankings",
+      "id": "nansen-crypto-screener",
       "supportedParameters": ["chains", "rows", "sort", "timeframe", "view"]
     },
     {
@@ -20,7 +20,22 @@
       "supportedParameters": []
     },
     {
+      "id": "crypto-skills",
+      "supportedParameters": []
+    },
+    {
+      "id": "sippar-chain-state",
+      "sameAs": "quicknode-blockchain-data",
+      "supportedParameters": ["address", "blocks", "fields", "network", "rpc", "tokens"]
+    },
+    {
+      "id": "onchain-token-rankings",
+      "sameAs": "nansen-crypto-screener",
+      "supportedParameters": ["chains", "rows", "sort", "timeframe", "view"]
+    },
+    {
       "id": "sippar-skills",
+      "sameAs": "crypto-skills",
       "supportedParameters": []
     }
   ],

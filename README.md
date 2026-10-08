@@ -10,20 +10,23 @@ Four models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
-| `sippar-chain-state` | live facts about one of 20 EVM chains: block, gas and fees, balances, one account's balances and transactions, any ERC-20 balance, a token's transfer logs | QuickNode |
-| `onchain-token-rankings` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, ranked the way you choose; and Nansen's perpetuals screener | Nansen |
+| `quicknode-blockchain-data` | live facts about one of 20 EVM chains: block, gas and fees, balances, one account's balances and transactions, any ERC-20 balance, transfer logs for a token or a wallet, a block and its transaction hashes, a transaction's receipt | QuickNode |
+| `nansen-crypto-screener` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, ranked the way you choose; and Nansen's perpetuals screener | Nansen |
 | `tavily-web-search` | a live web search with sources and an answer | Tavily |
-| `sippar-skills` | agent skills: Sippar's own for these models, and CryptoSkill's registry of crypto skills, by id, by name or by search | Sippar; CryptoSkill and each skill's author |
+| `crypto-skills` | agent skills: Sippar's own for these models, and CryptoSkill's registry of crypto skills, by id, by search and file by file | Sippar; CryptoSkill and each skill's author |
+
+Three models also answer under their earlier ids, with the same data and rate: `sippar-chain-state`,
+`onchain-token-rankings` and `sippar-skills`. Use the new ids above.
 
 ## Where to look
 
 | You want to | Read |
 |---|---|
 | reach the seller, send a request that keeps its arguments, stay under the call limit, read the routing line | [skills/sippar-antseed-buyer/SKILL.md](./skills/sippar-antseed-buyer/SKILL.md) |
-| chain facts: the six arguments, the page, transfer logs over a block range | [skills/sippar-chain-state/SKILL.md](./skills/sippar-chain-state/SKILL.md) |
-| token rankings and the perpetuals screener: the five arguments, the two page shapes | [skills/onchain-token-rankings/SKILL.md](./skills/onchain-token-rankings/SKILL.md) |
+| chain facts: the six arguments, the page, transfer logs for a token or a wallet, a block, a receipt | [skills/quicknode-blockchain-data/SKILL.md](./skills/quicknode-blockchain-data/SKILL.md) |
+| token rankings and the perpetuals screener: the five arguments, the two page shapes | [skills/nansen-crypto-screener/SKILL.md](./skills/nansen-crypto-screener/SKILL.md) |
 | web search: how to ask, the page | [skills/tavily-web-search/SKILL.md](./skills/tavily-web-search/SKILL.md) |
-| agent skills: how to ask for one or search, what the page carries | [skills/sippar-skills/SKILL.md](./skills/sippar-skills/SKILL.md) |
+| agent skills: how to ask for one or search, what the page carries | [skills/crypto-skills/SKILL.md](./skills/crypto-skills/SKILL.md) |
 | ideas: what each model is for, options per model, and how to combine them | [use-cases.md](./use-cases.md) |
 | copy a working call | [examples/curl.sh](./examples/curl.sh), [examples/python.py](./examples/python.py) |
 | check, offline and free, which request shapes keep your arguments | [tools/check-argument-survival.mjs](./tools/check-argument-survival.mjs) |
@@ -42,7 +45,7 @@ curl http://127.0.0.1:8377/v1/chat/completions \
   -H 'content-type: application/json' \
   -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
   -d '{
-    "model": "sippar-chain-state",
+    "model": "quicknode-blockchain-data",
     "network": "base",
     "fields": ["blockNumber", "gasPrice"],
     "messages": [{"role": "user", "content": "chain state"}]
@@ -75,10 +78,10 @@ antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 
 ## About the data
 
-Every page is the provider's data. `sippar-chain-state` is QuickNode's answer to documented
-JSON-RPC reads, with QuickNode's own integer beside each readable value. `onchain-token-rankings`
+Every page is the provider's data. `quicknode-blockchain-data` is QuickNode's answer to documented
+JSON-RPC reads, with QuickNode's own integer beside each readable value. `nansen-crypto-screener`
 is Nansen's screener data with the attribution Nansen requires. `tavily-web-search` is Tavily's
-response, whole. `sippar-skills` serves CryptoSkill's files as their authors published them, with the
+response, whole. `crypto-skills` serves CryptoSkill's files as their authors published them, with the
 author and license named in each skill's `SOURCE.md` and CryptoSkill's risk flags beside it; Sippar
 does not review or filter them. What you compute from a page is yours; the pages carry no derived figures.
 

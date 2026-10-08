@@ -8,7 +8,7 @@
  * routes nothing and pays nothing, so run it as often as you like.
  *
  * WHY IT MATTERS. Sippar's models take their arguments as top-level request-body
- * keys (`network` and `fields` on `sippar-chain-state`, for example). They select
+ * keys (`network` and `fields` on `quicknode-blockchain-data`, for example). They select
  * which chain you are served and which rows you pay for. A parameter that does not
  * reach the seller is not an error: you are served the default page, in full, at
  * full price, and nothing anywhere says so.
@@ -83,7 +83,7 @@ const enc = (o) => new TextEncoder().encode(JSON.stringify(o));
 const dec = (b) => JSON.parse(Buffer.from(b).toString('utf-8'));
 
 const ARGS = { network: 'base', fields: ['blockNumber', 'chainId'] };
-const PEER = '0x706fca9c0d0684c30f86209aae0c3565ce1aa69f@sippar-chain-state';
+const PEER = '0x706fca9c0d0684c30f86209aae0c3565ce1aa69f@quicknode-blockchain-data';
 const anthropicBody = { model: PEER, max_tokens: 1024, messages: [{ role: 'user', content: 'chain state' }], ...ARGS };
 const openaiBody = { model: PEER, messages: [{ role: 'user', content: 'chain state' }], ...ARGS };
 const responsesBody = { model: PEER, input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'chain state' }] }], ...ARGS };

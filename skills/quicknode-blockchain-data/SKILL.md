@@ -1,17 +1,18 @@
 ---
-name: sippar-chain-state
-description: Buy live facts about one EVM chain from Sippar's sippar-chain-state model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, and a token's transfer logs over a block range. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, rpc on AntSeed, which chains does sippar-chain-state serve.
+name: quicknode-blockchain-data
+description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, and a transaction's receipt. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, transaction receipt, rpc on AntSeed, sippar-chain-state, which chains does quicknode-blockchain-data serve.
 metadata:
-  version: "2.0.0"
+  version: "3.0.0"
   updated: "2026-10-08"
 ---
 
-# sippar-chain-state
+# quicknode-blockchain-data
 
 Live facts about one chain, bought from QuickNode at the moment you ask and passed through
 unchanged. Every page names QuickNode as the source. Transport (pin, request shape, the two
-surviving channels, the 8-in-flight limit) is in `skills/sippar-antseed-buyer/SKILL.md`; read
-it first. Model string: `sippar-chain-state`.
+surviving channels, the 8-in-flight limit) is in the `sippar-antseed-buyer` skill; read
+it first. Model string: `quicknode-blockchain-data`. The earlier id `sippar-chain-state` still
+answers with the same data, arguments and rate.
 
 ## What it answers
 
@@ -23,7 +24,9 @@ it first. Model string: `sippar-chain-state`.
 | One account you name | `addressNativeBalance`, `addressErc20Balance`, `addressTransactionCount` |
 | That account's transactions in the newest block | `addressBlocksScanned`, `addressTxCount`, `addressTxSent`, `addressTxReceived`, `addressTxRowsWithheld` |
 | That account's balance of any ERC-20 you name | `addressTokenBalance`, `addressTokenDecimals` |
-| A token's transfer logs | the `rpc` answer, QuickNode's reply to `eth_getLogs` |
+| A token's transfer logs, or every token a wallet sent or received | the `rpc` answer, QuickNode's reply to `eth_getLogs` |
+| A block's header and its transaction hashes | the `rpc` answer, QuickNode's reply to `eth_getBlockByNumber` |
+| One transaction's receipt: status, gas used, effective gas price, its logs | the `rpc` answer, QuickNode's reply to `eth_getTransactionReceipt` |
 
 20 chains on 2026-10-08: ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle,
 unichain, ink, soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad. A
@@ -40,19 +43,19 @@ All six are optional top-level keys, all announced in `supportedParameters`.
 | `address` | A `0x` + 40 hex account. Adds that account's three rows beside the chain's. Makes the page wider, so name `fields` to keep it narrow. Mixed case is checked as an EIP-55 checksum before anything is bought. |
 | `blocks` | With `address`: scan that account's transactions in the newest block. Capped at 1; older blocks are not served by this field. |
 | `tokens` | With `address`: up to 10 ERC-20 contracts, as a list or a comma string. Two rows per contract, the balance in the token's smallest unit and the contract's own `decimals()`. A contract that does not answer shows as failed, never as zero. A contract already on the chain's own token list is not read here: sent alone it is refused free with a note; sent beside other contracts it is silently left out. For those, ask for `addressErc20Balance` in `fields` instead. |
-| `rpc` | One read-only QuickNode command, answered as QuickNode returns it. Today `eth_getLogs` only. Send it alone, with `network` for a chain other than Ethereum. |
+| `rpc` | One read-only QuickNode command, answered as QuickNode returns it: `eth_getLogs` (transfer logs), `eth_getBlockByNumber` (a block) or `eth_getTransactionReceipt` (a transaction's receipt). Send it alone, with `network` for a chain other than Ethereum. |
 
 Example, two fields on Base:
 
 ```json
-{"model": "sippar-chain-state", "network": "base", "fields": ["blockNumber", "gasPrice"],
+{"model": "quicknode-blockchain-data", "network": "base", "fields": ["blockNumber", "gasPrice"],
  "messages": [{"role": "user", "content": "chain state"}]}
 ```
 
 Example, one account on Arbitrum, only its own rows:
 
 ```json
-{"model": "sippar-chain-state", "network": "arbitrum",
+{"model": "quicknode-blockchain-data", "network": "arbitrum",
  "address": "0x…", "fields": ["addressNativeBalance", "addressErc20Balance", "addressTransactionCount"],
  "messages": [{"role": "user", "content": "chain state"}]}
 ```
@@ -61,10 +64,18 @@ Through a translating client, the same arguments go under `metadata.sippar` or a
 `x-sippar-network`, `x-sippar-fields`, `x-sippar-address`, `x-sippar-blocks`, `x-sippar-tokens`,
 `x-sippar-rpc` (the main skill, section 3).
 
-## `rpc`: a token's transfer logs
+## `rpc`: one QuickNode command
+
+Three commands are served, each read-only and answered exactly as QuickNode returns it under a line
+saying what was read and when. Any other method, and every command that writes, is refused free
+before anything is bought. The `rpc` object may be at most 1,000 bytes.
+
+### `eth_getLogs`: transfer logs for a token, or for a wallet
+
+A token's transfers, by its contract `address`:
 
 ```json
-{"model": "sippar-chain-state", "network": "ethereum",
+{"model": "quicknode-blockchain-data", "network": "ethereum",
  "rpc": {"method": "eth_getLogs",
          "params": [{"address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
                      "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
@@ -72,19 +83,62 @@ Through a translating client, the same arguments go under `metadata.sippar` or a
  "messages": [{"role": "user", "content": "chain state"}]}
 ```
 
+Every token a wallet received, by naming the wallet instead of a contract. The wallet goes in topic
+position 2 (received) or 1 (sent), written as a 32-byte topic: `0x`, then 24 zeros, then the
+wallet's 40 hex characters. Here, transfers to `0xd8da6bf2…6045`:
+
+```json
+{"model": "quicknode-blockchain-data", "network": "ethereum",
+ "rpc": {"method": "eth_getLogs",
+         "params": [{"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+                                null,
+                                "0x000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045"],
+                     "fromBlock": "0x15f9000", "toBlock": "0x15f9010"}]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
+
 - `params` is one filter object with the keys `address`, `topics`, `fromBlock`, `toBlock`,
-  `blockHash`. The filter must name a contract `address` (one, or a list). Any other method,
-  any other key, and every command that writes, is refused free before anything is bought. The
-  `rpc` object may be at most 1,000 bytes.
-- The answer is QuickNode's JSON-RPC reply, unchanged, under a line saying what was read and
-  when. You are billed for the tokens you receive, and each log is about 160 of them. One block
-  of a busy token can run past ten thousand, so name a narrow range by absolute block number
-  rather than `latest`.
+  `blockHash`. It must name a contract `address` (one, or a list) or a wallet in topic 1 or 2;
+  a filter with neither is refused free with a message showing both forms.
+- You are billed for the tokens you receive, and each log is about 160 of them. One block of a
+  busy token can run past ten thousand, so name a narrow range by absolute block number rather
+  than `latest`.
 - **When the answer is wider than one page**, the page serves the first logs that fit, unchanged
   and in QuickNode's order, cut on a block boundary. Two lines above the JSON say how many logs
   QuickNode returned, how many this page serves, and the exact `fromBlock` to send next, so no
   log is repeated. When one block alone is wider than a page, the lines say so and ask for a
   narrower `topics` filter with `fromBlock` and `toBlock` both set to that block.
+
+### `eth_getBlockByNumber`: a block's header and transaction hashes
+
+```json
+{"model": "quicknode-blockchain-data", "network": "base",
+ "rpc": {"method": "eth_getBlockByNumber", "params": ["latest", false]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
+
+- Exactly two params: the block (`latest`, `earliest`, `safe`, `finalized`, or a `0x` block
+  number) and `false`. The block comes back with its transaction hashes, not full transactions;
+  anything else is refused free.
+- **When the block is wider than one page**, the header (`number`, `hash`, `timestamp` and every
+  other field) is whole and the transaction hashes are cut to the first that fit, in QuickNode's
+  order, with a line above the JSON saying how many there were.
+
+### `eth_getTransactionReceipt`: one transaction's receipt
+
+```json
+{"model": "quicknode-blockchain-data", "network": "ethereum",
+ "rpc": {"method": "eth_getTransactionReceipt",
+         "params": ["0x<the transaction hash: 64 hex characters>"]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
+
+- Exactly one param: the transaction hash, `0x` and 64 hex characters. Anything else is refused
+  free.
+- The receipt carries `status`, `gasUsed`, `effectiveGasPrice` and the transaction's logs, as
+  QuickNode returns them.
+- **When the receipt is wider than one page**, every field is whole except `logs`, which is cut to
+  the first that fit, in QuickNode's order, with a line above the JSON saying how many there were.
 
 ## Reading the page
 
@@ -120,5 +174,8 @@ refusal bills nothing on an open channel.
 
 ## Changes
 
+- 3.0.0 (2026-10-08): the model is `quicknode-blockchain-data` (the old id `sippar-chain-state`
+  still answers). `rpc` adds wallet-filtered `eth_getLogs`, `eth_getBlockByNumber` and
+  `eth_getTransactionReceipt`.
 - 2.0.0 (2026-10-08): own skill. Added `rpc` and its served-in-part page, `tokens`, the partial
   page rule, and the wei note.

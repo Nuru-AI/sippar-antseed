@@ -2,14 +2,14 @@
 name: tavily-web-search
 description: Buy a live web search with sources from Sippar's tavily-web-search model on AntSeed, served as Tavily returns it. Use it when an agent on AntSeed needs current information from the web with the pages it came from. Triggers on - web search on AntSeed, search the web, find sources for, what does the web say about, tavily-web-search.
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   updated: "2026-10-08"
 ---
 
 # tavily-web-search
 
 A live web search from Tavily, served as Tavily returns it. Transport (pin, request shape, the
-8-in-flight limit) is in `skills/sippar-antseed-buyer/SKILL.md`; read it first. Model string:
+8-in-flight limit) is in the `sippar-antseed-buyer` skill; read it first. Model string:
 `tavily-web-search`.
 
 ## How to ask
@@ -43,4 +43,5 @@ its width is Tavily's. A refusal bills nothing on an open channel.
 
 ## Changes
 
+- 1.0.1 (2026-10-08): skills referred to by name.
 - 1.0.0 (2026-10-08): first publish.
