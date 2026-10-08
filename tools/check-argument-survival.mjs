@@ -7,11 +7,11 @@
  * synthetic request bodies written here. It opens no socket, discovers no peer,
  * routes nothing and pays nothing, so run it as often as you like.
  *
- * WHY IT MATTERS. Sippar's `sippar-chain-state` listing takes two top-level
- * request-body parameters, `network` and `fields`. They select which chain you
- * are served and which columns you pay for. A parameter that does not reach the
- * seller is not an error: you are served the default page, in full, at full
- * price, and nothing anywhere says so.
+ * WHY IT MATTERS. Sippar's models take their arguments as top-level request-body
+ * keys (`network` and `fields` on `sippar-chain-state`, for example). They select
+ * which chain you are served and which rows you pay for. A parameter that does not
+ * reach the seller is not an error: you are served the default page, in full, at
+ * full price, and nothing anywhere says so.
  *
  * WHAT IT SHOWS:
  *
@@ -25,8 +25,11 @@
  *      exact pair BUYING.md's table asserts, and case D2 tests the reverse, so
  *      the loss is not a property of one shape or one direction.
  *   3. Two channels do cross a translation: request HEADERS, and the `metadata`
- *      object on one pair. Sippar reads neither today. They are listed because
- *      a reader deserves the whole picture, not as something to rely on.
+ *      object. Every Sippar model reads both, in a fixed order: a top-level
+ *      field first, then `metadata.sippar.<name>`, then the `x-sippar-<name>`
+ *      header. The namespaced spelling is the one the models read, so cases E
+ *      and F test that spelling, on both translating pairs a buyer can take,
+ *      and case G tests `fields` as a list as well as a comma string.
  *
  * Every body below is synthetic and written by the author. No buyer's request
  * has been inspected to produce any of it.
@@ -92,11 +95,14 @@ function run({ path, body, from, to, headers = {} }) {
   );
   if (!out) return { failed: 'transformRequest returned null' };
   const b = dec(out.request.body);
+  const h = out.request.headers ?? {};
   return {
     network: b.network,
     fields: b.fields,
-    metadataNetwork: b.metadata?.network,
-    headerNetwork: out.request.headers['x-sippar-network'],
+    sipparNetwork: b.metadata?.sippar?.network,
+    sipparFields: b.metadata?.sippar?.fields,
+    headerNetwork: h['x-sippar-network'],
+    headerCount: Object.keys(h).filter((k) => k.startsWith('x-sippar-')).length,
   };
 }
 
@@ -143,12 +149,33 @@ const CASES = [
     expect: { network: undefined, fields: undefined },
   },
   {
-    name: 'E. metadata survives anthropic-messages to openai-chat only',
+    name: 'E. metadata.sippar survives anthropic-messages to openai-chat (the spelling the models read)',
     path: '/v1/messages',
-    body: { ...anthropicBody, metadata: { network: 'base' } },
+    body: { ...anthropicBody, metadata: { sippar: { network: 'base', fields: ['blockNumber', 'chainId'] } } },
     from: 'anthropic-messages',
     to: 'openai-chat-completions',
-    expect: { metadataNetwork: 'base' },
+    expect: { sipparNetwork: 'base', sipparFields: ['blockNumber', 'chainId'] },
+  },
+  {
+    name: 'F. metadata.sippar survives openai-responses to openai-chat too',
+    path: '/v1/responses',
+    body: { ...responsesBody, metadata: { sippar: { network: 'base', fields: 'blockNumber,chainId' } } },
+    from: 'openai-responses',
+    to: 'openai-chat-completions',
+    expect: { sipparNetwork: 'base', sipparFields: 'blockNumber,chainId' },
+  },
+  {
+    name: 'G. every x-sippar-* header crosses the translation (one per argument name)',
+    path: '/v1/messages',
+    body: anthropicBody,
+    from: 'anthropic-messages',
+    to: 'openai-chat-completions',
+    headers: {
+      'x-sippar-network': 'base', 'x-sippar-fields': 'blockNumber,chainId', 'x-sippar-address': '0x0000000000000000000000000000000000000001',
+      'x-sippar-tokens': '0x0000000000000000000000000000000000000002', 'x-sippar-chains': 'base,solana', 'x-sippar-rows': '10',
+      'x-sippar-view': 'perp-screener', 'x-sippar-rpc': '{"method":"eth_getLogs","params":[{"address":"0x0000000000000000000000000000000000000003"}]}',
+    },
+    expect: { headerNetwork: 'base', headerCount: 8 },
   },
 ];
 
@@ -165,7 +192,7 @@ for (const c of CASES) {
 }
 console.log(
   changed === 0
-    ? '\nAll cases behave as BUYING.md describes. Send the chat-completions shape.'
-    : `\n${changed} case(s) CHANGED. Re-read BUYING.md before trusting its guidance.`,
+    ? '\nAll cases behave as the skills describe. Send the chat-completions shape.'
+    : `\n${changed} case(s) CHANGED. Re-read the skills before trusting their guidance.`,
 );
 process.exit(changed === 0 ? 0 : 1);

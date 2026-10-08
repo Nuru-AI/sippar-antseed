@@ -1,122 +1,66 @@
 ---
 name: sippar-antseed-buyer
-description: Buy live onchain data from Sippar's listings on the AntSeed peer-to-peer inference network, without losing the arguments you sent. Use this when an agent needs current chain data bought live from QuickNode (block height, gas, native and ERC-20 balances, one account's balances) or the top onchain tokens ranked by fully diluted value, volume, net flow, liquidity or price change, and is paying per call in USDC on Base. Triggers on - buy chain state from AntSeed, pin the Sippar peer, sippar-chain-state, onchain-token-rankings, my network parameter was ignored, I was served the wrong chain, my arguments were dropped in translation, metadata.sippar, x-sippar-network, x-antseed-required-parameters.
+description: Reach Sippar's data models on the AntSeed network and get the answer you asked for. Use this before calling sippar-chain-state, onchain-token-rankings or tavily-web-search from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
+metadata:
+  version: "2.0.0"
+  updated: "2026-10-08"
 ---
 
-# Buying from Sippar Onchain Data on AntSeed
+# Reaching Sippar's models on AntSeed
 
-Sippar serves two data listings on AntSeed. This skill carries the three things that decide whether a call returns what was asked for: the pin, the request shape, and — when the shape cannot be changed — the two channels that survive a translation and are still served.
+Sippar sells three data models on AntSeed. Each one is a provider's data served as the
+provider returns it, with the source named on every page. This skill is about the transport:
+how a request reaches the right seller with its arguments intact, and how to tell from the
+answer that it did. What each model answers, and what you can do with it, is in its own skill:
 
-## The two listings
-
-| Model string | Returns | Accepts parameters |
+| Model string | What it answers | Skill |
 |---|---|---|
-| `sippar-chain-state` | QuickNode's chain data, bought at the moment you ask and passed through unmodified | `network`, `fields`, `address`, `blocks` |
-| `onchain-token-rankings` | top onchain tokens, ranked by fully diluted value unless you choose another column | `chains`, `timeframe`, `sort`, `rows` |
+| `sippar-chain-state` | live facts about one of 20 EVM chains, bought from QuickNode when you ask | `skills/sippar-chain-state/SKILL.md` |
+| `onchain-token-rankings` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, from Nansen, plus Nansen's perpetuals screener | `skills/onchain-token-rankings/SKILL.md` |
+| `tavily-web-search` | a live web search with sources, from Tavily | `skills/tavily-web-search/SKILL.md` |
 
-**The default `network` is `ethereum`.** Every example below uses `base` because it is a choice; if
-nothing reaches the seller you are served ethereum-mainnet and billed in full. 20 chains were served
-on 2026-09-24 — ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle, unichain, ink,
-soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad — and a value the
-listing does not serve is refused with an HTTP 400 that lists the current set, at zero on the ledger.
-The legal `fields` names are on every sliced payload as `selection.fieldsAvailable`; read them
-there rather than from a copy. On 2026-09-30 there were 20: `blockNumber`, `gasPrice`,
-`maxPriorityFeePerGas`, `chainId`, `blockTimestamp`, `baseFeePerGas`, `blockGasUsed`,
-`blockGasLimit`, `blockTransactionCount`, `nativeBalance`, `transactionCount`, `erc20Balance`, plus
-the `address*` names below. Every one is a value QuickNode returns; the listing computes none.
-
-**Two more arguments ask about one account.** `address` (a 0x-prefixed 20-byte address) adds
-that account's rows beside the chain's own: `addressNativeBalance`, `addressTransactionCount`,
-`addressErc20Balance`. It makes the page **wider**, so it bills more output tokens; `fields` narrows
-it again. All-lowercase and all-uppercase are accepted as written; mixed case is an EIP-55 checksum
-and is verified, so a mistyped character is refused with an HTTP 400 before anything is bought
-rather than answered about a different account. `blocks` scans that account's transactions in the
-newest block (`addressBlocksScanned`, `addressTxCount`, `addressTxSent`, `addressTxReceived`, and
-`addressTxRowsWithheld` only when more than 50 match). **`blocks` is capped at 1 and needs an
-`address`**; anything else is refused with a 400 that says why. To read further back, ask for
-blocks by absolute number from the `blockNumber` the page returns. The `address*` field names are
-refused in `fields` unless an `address` is sent.
-
-**`onchain-token-rankings` takes four arguments of its own**, all optional, all top-level:
-
-- `chains`: any of `solana`, `ethereum`, `base`, `bnb`, `arbitrum`, as an array or one
-  comma-separated string. Default: all five.
-- `timeframe`: `5m`, `10m`, `1h`, `6h`, `24h`, `7d` or `30d`. Default `24h`. It is the window
-  volume, buy and sell volume, net flow and price change cover; fully diluted value, market cap and
-  liquidity are read at the moment you ask either way.
-- `sort`: `fdv`, `volume`, `netflow`, `liquidity`, `priceChange`, `buyVolume` or `sellVolume`,
-  always largest first, case-insensitive. Default `fdv`.
-- `rows`: a whole number from 5 to 50. Default 25. Fewer rows bill fewer output tokens.
-
-A value outside these is refused with an HTTP 400 that says what is accepted, before anything is
-bought. The JSON names what you were served in `chainsCovered`, `timeframe`, `slots` and
-`ranking.requestedSort` (in the upstream's spelling: `priceChange` reads `price_change DESC`).
+Seller peer `706fca9c0d0684c30f86209aae0c3565ce1aa69f`, onchain agent 84918, settled in USDC on
+Base through your AntSeed payment channel. You pay per output token at the rate on the peer
+record. Rates change, so read them rather than copying a number:
 
 ```bash
-curl http://127.0.0.1:8377/v1/chat/completions \
-  -H 'content-type: application/json' \
-  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
-  -d '{
-    "model": "onchain-token-rankings",
-    "chains": ["base", "solana"],
-    "timeframe": "7d",
-    "sort": "volume",
-    "rows": 10,
-    "messages": [{"role": "user", "content": "top tokens"}]
-  }'
+antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 ```
 
-They follow the same shape rule as the chain-state arguments (Step 2), and ride the same two
-fallback channels (Step 4) as `metadata.sippar.chains|timeframe|sort|rows` or
-`x-sippar-chains|timeframe|sort|rows`.
+## 1. Pin the peer
 
-Seller peer: `706fca9c0d0684c30f86209aae0c3565ce1aa69f`. Settlement is USDC on Base mainnet.
-
-## Step 1, pin the peer
-
-Buyer auto-selection will not necessarily route to this seller, so pin it.
-
-**An agent or script should pin per request**, which needs no CLI and no shared state:
+Buyer auto-selection does not necessarily route to this seller, so name it. A script or an
+agent should pin per request, which needs no CLI and changes nothing shared:
 
 ```
 x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 ```
 
-The other three routes: `"model": "0x706FCA9C0d0684C30F86209AAe0c3565cE1aa69F@sippar-chain-state"`,
-or a session pin, or the desktop app's Discover screen. The session pin needs the **bare** id,
-without `0x`; the other three take either form.
+The other ways: put the seller address in the model string
+(`"model": "0x706FCA9C0d0684C30F86209AAe0c3565cE1aa69F@sippar-chain-state"`), set a session pin
+with the CLI (`antseed buyer connection set --peer 706fca9c…`, bare id without `0x`), or pick
+`Sippar Onchain Data` on the desktop app's Discover screen. If your wallet belongs to the desktop
+app, most `antseed buyer` commands will not run against it; pin from the app or per request.
 
-```bash
-antseed buyer start --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f      # CLI wallets only
-antseed buyer connection set --peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f   # mutates a shared pin
-```
-
-**If the wallet belongs to the VPR desktop app, `antseed buyer start|balance|status` will not run** —
-the CLI cannot decrypt an Electron safeStorage identity. Pin from the app, or use the per-request
-header, or give the CLI its own `--data-dir`.
-
-Free preflight, calls no model, works in both setups:
+Free preflight, which calls no model:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
 antseed buyer connection get
 ```
 
-## Step 2, use the chat-completions shape, always
+## 2. Send the chat-completions shape
 
-This seller advertises one API protocol, `openai-chat-completions`. Post to `/v1/chat/completions` on the local buyer proxy. `127.0.0.1:8377` is the default address only — `antseed buyer start --port <number>` moves it, so read the port from the proxy you are actually running.
+This seller advertises one API protocol, `openai-chat-completions`. Post to
+`/v1/chat/completions` on your local buyer proxy (`127.0.0.1:8377` by default; `antseed buyer
+start --port` moves it). Any OpenAI-compatible client works on its chat-completions path.
 
-**Do NOT use `/v1/messages` or `/v1/responses` for a parameterised call.** The AntSeed buyer proxy translates between shapes by rebuilding the request body from a fixed key list, and a top-level `network` or `fields` is not on that list. It is dropped silently, you are served the default chain in full, and you pay the full page price. Nothing errors.
-
-**If you cannot change the shape, you still have two channels** — `metadata.sippar.*` and the `x-sippar-*` headers — which cross every translation and are read by this listing. Step 4 has them. They are strictly better than being refused.
-
-## Step 3, send the parameters at the top level
+Arguments are top-level keys in the request body, beside `model` and `messages`:
 
 ```bash
 curl http://127.0.0.1:8377/v1/chat/completions \
   -H 'content-type: application/json' \
   -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
-  -H 'x-antseed-required-parameters: network,fields' \
   -d '{
     "model": "sippar-chain-state",
     "network": "base",
@@ -125,151 +69,97 @@ curl http://127.0.0.1:8377/v1/chat/completions \
   }'
 ```
 
-`network` and `fields` are siblings of `model` and `messages`, never nested inside a message. From
-the OpenAI Python SDK that is `extra_body={"network": "base", "fields": [...]}` on
-`chat.completions.create` — and never the SDK's `responses` path, which posts to `/v1/responses` and
-is translated. (A human at a chat box has one alternative: sending a bare chain name as the entire
-message also selects the chain. A message longer than four words that merely mentions a chain does
-not — it silently returns ethereum, and bills you. That message-text path is the only case where the
-`confidence` slot in Step 5 carries a number.)
+From the OpenAI Python SDK that is `extra_body={"network": "base", "fields": [...]}` on
+`chat.completions.create`. The SDK flattens `extra_body` into the body. If you write the JSON
+yourself, put the arguments at the top level: a literal `"extra_body": {...}` key is refused
+with a free 400 that says so.
 
-## Step 4, if your shape is translated, use a channel that survives
+**Do not post to `/v1/messages` or `/v1/responses` with arguments.** The buyer proxy translates
+those shapes by rebuilding the body from a fixed key list, and your arguments are not on it.
+They are dropped silently, you are served the default page, and you pay for it.
 
-Two channels cross every translation the proxy performs, and this listing reads both. Unlike the
-header in Step 4b, these get you **the page you asked for** rather than no page.
+## 3. If your client translates, use a channel that survives
 
-```bash
-curl http://127.0.0.1:8377/v1/messages \
-  -H 'content-type: application/json' \
-  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
-  -H 'x-sippar-network: base' \
-  -H 'x-sippar-fields: blockNumber,gasPrice' \
-  -d '{
-    "model": "sippar-chain-state",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "chain state"}]
-  }'
-```
-
-The same four arguments also ride the request body under `metadata.sippar`, which survives the
-rebuild whole:
+Two channels cross every translation the proxy performs, and every Sippar model reads both.
+Under `metadata`, namespaced:
 
 ```json
 "metadata": {"sippar": {"network": "base", "fields": ["blockNumber", "gasPrice"]}}
 ```
 
-`network`, `fields`, `address` and `blocks` are all readable from either channel. A header can only
-carry text, so `fields` is comma-separated there; under `metadata` it may be a list or the same
-comma string. A top-level field still wins when it reaches us — these are the fallback for a shape
-that cannot deliver one, not a second way to override it.
+Or as headers, one per argument, `x-sippar-<argument>`:
 
-**Confirm it arrived** on the routing line (Step 5): `source=network-meta` or `source=network-hdr`.
+```
+x-sippar-network: base
+x-sippar-fields: blockNumber,gasPrice
+```
 
-**The bound.** Neither channel is documented by this marketplace. Both are **measured to survive,
-not promised to**. The measurement is free, offline, reproducible, and fails loudly if the proxy
-moves — see the verification section of [BUYING.md](../../BUYING.md).
+A header carries text, so a list is comma-separated there and an object (`rpc`) is its JSON as a
+string. Under `metadata` a list may be a list. A top-level argument, when it reaches the seller,
+wins over both. Every argument of every model rides these channels under its own name.
 
-## Step 4b, or fail closed instead — requiring only what the listing announces
+Neither channel is documented by the marketplace. Both are measured to survive, not promised
+to; the check is free and offline (section 7).
 
-Prefer Step 4. This header buys you a refusal, not an answer; take it only if you would rather be
-refused than served the wrong chain.
-
+## 4. Or fail closed, for free
 
 ```
 x-antseed-required-parameters: network,fields
 ```
 
-It makes the proxy refuse any call that would need a translation, before routing and before payment.
-A correct call on `sippar-chain-state` is unaffected. It is the difference between paying full price
-for the wrong chain and paying nothing — measured at zero on the ledger on a channel that was
-already open. On a channel's very first request we cannot measure it for you: your own client may
-already have pre-signed this seller's minimum before the refusal happens.
+With this header the proxy refuses any call that would need a translation, before routing and
+before payment, with `422 required_capability_unavailable`. A call that needs no translation is
+unaffected. It buys you a refusal, not an answer, so prefer section 3.
 
-**It does not check your request body.** The proxy compares your header against what the seller
-announces, so a misspelled key on an untranslated route sails through: measured 2026-09-24,
-`{"netwrok": "base", ...}` with the header set returned HTTP 200, ethereum-mainnet, `mode=default`,
-billed as a normal served page. Step 5 is the only detector for that, so parse the routing line
-before you use the answer, not after.
-
-A translated call is refused with *"Pinned seller does not advertise required parameter(s)"*. It does
-advertise them — the wording is the proxy's, and it means your request was about to be translated.
-
-**Do not require `network` or `fields` on `onchain-token-rankings`.** That listing announces
-`chains`, `rows`, `sort` and `timeframe`, and the proxy counts any required parameter the listing
-does not announce as missing: the peer is filtered out of selection, or a pinned call returns
-`422 required_capability_unavailable` every time. The refusal does not explain itself. It is not a
-lockout: drop the parameter that listing does not announce and calls resume immediately.
-
-The rule in one line: **require only parameters the service announces.** The human-readable peer
-record does not print them; `--json` does:
+Two rules. It checks what the seller announces, not what your body contains, so a misspelled
+key still gets served and billed. And require only what the model announces:
+`sippar-chain-state` announces `address, blocks, fields, network, rpc, tokens`;
+`onchain-token-rankings` announces `chains, rows, sort, timeframe, view`; `tavily-web-search`
+announces nothing, so requiring any name on it refuses every call. Read the current lists:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
   | jq '.peer.providerServiceCapabilities.openai.services | map_values(.supportedParameters)'
-# {"onchain-token-rankings": ["chains","rows","sort","timeframe"], "sippar-chain-state": ["address","blocks","fields","network"]}
 ```
 
-## Step 5, check the answer agreed with you
+## 5. At most 8 calls in flight
 
-Every served page carries a routing line:
+The seller serves at most 8 calls at once per buyer, across all three models together. The
+ninth is refused with `429 buyer_concurrency_limit` and `retry-after: 1`; nothing is served and
+nothing is billed. The peer record's `maxConcurrency` is the node's ceiling, not this number. A
+sweep over many chains runs in batches of 8 or fewer, with a retry on 429.
+
+## 6. Read the routing line before you use the answer
+
+Every `sippar-chain-state` page carries a routing line, and the same facts under `routing` in
+its JSON:
 
 ```
 routing: mode=declared  network=base  confidence=n/a  source=network-field
 ```
 
-- `mode=declared` with `source=network-field` means the `network` argument arrived and drove the selection.
-- `mode=default` with `source=product-name` means nothing arrived. Do not treat that page as an
-  answer about the chain you asked for. **Check this in code before consuming the answer** — it is
-  the one signal that catches both a translated request and your own typo, and by the time you read
-  it you have already paid.
-- The `confidence` slot carries a number only when a value was inferred from your message text rather than taken from a field you set, which the published terms describe; on a declared or default serve it reads `n/a`.
+`mode=declared` means your `network` arrived and selected the chain; `source` names the channel
+(`network-field`, `network-meta`, `network-hdr`). `mode=default` means nothing arrived and you
+are looking at Ethereum, billed in full. Check this in code before consuming the page. It is the
+one signal that catches both a translated request and your own typo.
 
-## Reading the answer
+A refusal from the listing is an HTTP 400 whose message says what is accepted. On an open
+channel it bills nothing: measured at zero on the ledger, against a response header that claimed
+otherwise. Cost a call from your ledger (`antseed buyer activity`), never from
+`x-antseed-estimated-cost-usd`.
 
-Both listings return a markdown table with the same rows fenced as JSON beneath it. **Parse the fenced JSON in code; pass the table through to a person as it arrives**, keep every field, and keep the explanatory notes and attribution.
-
-Mistakes that break a consumer (the full schema is in BUYING.md §7):
-
-- A row's subject is `target`. There is no `address` key on a row.
-- `value` is already human-readable (a string). `valueRaw` is QuickNode's unscaled integer; divide
-  only that by `10^decimals`. Never divide `value` again.
-- Token rows are one per asset. Key by `(metric, target, asset)`, never by `metric` alone.
-- `ok: false` plus a `reason` code marks an unanswered row. Keep it.
-- Check `routing.mode == "declared"` in the JSON before trusting which chain you got.
-- `addressTransactionCount` is transactions the account sent, so it is lower than a block
-  explorer's count, which includes incoming ones.
-- With no `address`, the balance rows are a fixed set of protocol contracts, never a wallet. With an
-  `address` and no `fields`, you also pay for all of those rows; name the `address*` fields instead.
-- No computed values, no USD prices, no history. The transfer cost of a chain is
-  `21000 × (baseFeePerGas + maxPriorityFeePerGas)` in wei, which you compute from the page.
-
-Keep the notes. A correct value can look wrong to a model that doesn't know the chain: one chain's real gas limit reads as absurd, and a verified page handed to a weak model came back with four confident accusations of corrupt data. All four were false.
-
-## Cost
-
-Per call, metered on output tokens, settled in USDC on Base through an AntSeed payment channel. You
-are billed per output token at the rate on the peer record, not per page — and rates change, so read
-them rather than assuming. A refused call moved **nothing** on the ledger even where
-`x-antseed-estimated-cost-usd` claimed otherwise: one 400 reported a cost roughly twice that of a
-real answer against a ledger delta of zero. Cost a call from the ledger, never from the header.
-
-```bash
-antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f
-```
-
-Using `fields` lowers what a call costs, which is the point of the parameter. Measured 2026-09-24: a
-dropped `fields` costs **7.6x** what the same call costs with two rows named. But one row still
-costs about **13%** of the full page — the notes, attribution and JSON envelope are most of a small
-answer — so narrowing past a couple of rows saves little.
-
-## Verify the shape rule yourself, free
+## 7. Verify the shape rule yourself, free
 
 ```bash
 node tools/check-argument-survival.mjs
 ```
 
-Runs against the `@antseed/api-adapter` package already installed with your buyer, prints which protocol pairs preserve a top-level argument, and exits non-zero if the behaviour has moved. No network call, no spend.
+Runs offline against the `@antseed/api-adapter` package your buyer already has, prints which
+protocol pairs keep a top-level argument and which channels cross a translation, and exits
+non-zero if the behaviour has moved.
 
-## More
+## Changes
 
-`BUYING.md` in this repository has the full detail. The wider Sippar catalog is at <https://sippar.network/marketplace>, machine-readable at <https://sippar.network/llms.txt>.
+- 2.0.0 (2026-10-08): transport only; the per-model content moved to its own skills. Added the
+  8-in-flight limit, the `extra_body` refusal, and the three announced parameter lists.
+- 1.0.0 (2026-09-24): first publish, one skill for two models.

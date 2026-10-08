@@ -9,11 +9,15 @@
   "services": [
     {
       "id": "sippar-chain-state",
-      "supportedParameters": ["address", "blocks", "fields", "network"]
+      "supportedParameters": ["address", "blocks", "fields", "network", "rpc", "tokens"]
     },
     {
       "id": "onchain-token-rankings",
-      "supportedParameters": ["chains", "rows", "sort", "timeframe"]
+      "supportedParameters": ["chains", "rows", "sort", "timeframe", "view"]
+    },
+    {
+      "id": "tavily-web-search",
+      "supportedParameters": []
     }
   ],
   "githubProof": "https://raw.githubusercontent.com/Nuru-AI/sippar-antseed/HEAD/antseed.json",
