@@ -1,4 +1,4 @@
-"""Working calls to Sippar's four models on AntSeed with the OpenAI Python SDK.
+"""Working calls to Sippar's five models on AntSeed with the OpenAI Python SDK.
 
 Each call is a paid purchase from YOUR AntSeed buyer proxy, billed per output token at the
 rate on the peer record. Use the chat-completions path only: the SDK's `responses` path is
@@ -57,6 +57,15 @@ def skill(request: str) -> str:
     r = client.chat.completions.create(
         model="crypto-skills",
         messages=[{"role": "user", "content": request}],
+    )
+    return r.choices[0].message.content
+
+
+def x_posts(search: str) -> str:
+    """Public X posts: keywords, names or X operators (from:, lang:, since:, "phrase"), never a sentence."""
+    r = client.chat.completions.create(
+        model="sippar-x-social",
+        messages=[{"role": "user", "content": search}],
     )
     return r.choices[0].message.content
 

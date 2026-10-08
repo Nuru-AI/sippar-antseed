@@ -90,6 +90,23 @@ return the matching registry entries; ask for the one you want by its id, built 
 model you need (`quicknode-blockchain-data`, `nansen-crypto-screener`, `tavily-web-search`), all through
 AntSeed itself.
 
+## sippar-x-social
+
+X search on any subject, not only crypto.
+
+**Reactions to a launch, a brand or an event.** The name with `since:` a recent date (a product
+launch, a match, an announcement): the popular posts about it, with links, likes and views per post.
+
+**What an account posted.** `from:handle`, optionally with `since:`: a company's, a team's or a
+person's own posts.
+
+**Mentions of a phrase.** Quote it: `"best pizza"`, `"agent wallet"`, a slogan or a product name.
+
+**One language or market.** Add `lang:de`, `lang:es` and so on.
+
+Keywords and names work; plain questions and single generic words do not (a coin ticker on its
+own returns giveaway spam).
+
 ## Combinations
 
 Each is a sequence of calls. The value named in one page goes into the next request.
@@ -118,6 +135,9 @@ Each is a sequence of calls. The value named in one page goes into the next requ
    `nansen-crypto-screener` for the chain the chosen skill works on.
 9. **Learn the call, then make it.** `crypto-skills` with `quicknode-blockchain-data` for the
    arguments; then the `quicknode-blockchain-data` call it describes.
+10. **What is said, then what is so.** `sippar-x-social` for what X is saying about a story this
+   week; then `tavily-web-search` for the sources behind it, or, for an onchain project,
+   `quicknode-blockchain-data` or `nansen-crypto-screener` to check the claims against the data.
 
 ## What the pages are not
 
