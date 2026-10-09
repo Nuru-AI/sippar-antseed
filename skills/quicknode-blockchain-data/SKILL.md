@@ -1,8 +1,8 @@
 ---
 name: quicknode-blockchain-data
-description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, a transaction's receipt, a transaction itself, an account's native balance at any block, the calls and internal transfers that touched a wallet, and any read-only contract call at any block. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, eth_getTransactionByHash, eth_getBalance, balance at a past block, trace_filter, internal transactions, native coin moved by a contract, eth_call, balanceOf at a past block, transaction receipt, transaction by hash, rpc on AntSeed, sippar-chain-state, which chains does quicknode-blockchain-data serve.
+description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, a transaction's receipt, a transaction itself, an account's native balance at any block, the calls and internal transfers that touched a wallet, and any read-only contract call at any block. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, eth_getTransactionByHash, eth_getBalance, balance at a past block, trace_filter, internal transactions, native coin moved by a contract, eth_call, balanceOf at a past block, transaction receipt, transaction by hash, rpc on AntSeed, rpc on Avalanche, zkSync, HyperEVM, Sei, Kaia, X Layer or another chain, sippar-chain-state, which chains does quicknode-blockchain-data serve.
 metadata:
-  version: "3.4.1"
+  version: "3.5.1"
   updated: "2026-10-09"
 ---
 
@@ -32,9 +32,21 @@ answers with the same data, arguments and rate.
 | The calls and internal transfers that touched a wallet, including native coin a contract sent it | the `rpc` answer, QuickNode's reply to `trace_filter` |
 | What a contract's read-only function returned at any block, such as a token balance then | the `rpc` answer, QuickNode's reply to `eth_call` |
 
-20 chains on 2026-10-08: ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle,
-unichain, ink, soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad. A
-chain the model does not serve is refused with a free 400 that lists the current set.
+**Chains: `rpc` commands run on 46 (2026-10-09)**, each answered exactly as QuickNode returns
+it. Name the chain with `network`; QuickNode's own network name is accepted too (`hype-mainnet`,
+`sei-pacific`, `avalanche-mainnet`):
+
+ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle, unichain, ink, soneium,
+world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad, 0g, abstract, arc, avalanche,
+b3, cyber, flare, fraxtal, hemi, hyperevm, imx, joc, kaia, lisk, mode, morph, arbitrum-nova, peaq,
+plasma, sei, story, tempo, vana, xlayer, xrplevm, zksync.
+
+**The summary page is an extra on the first 20** (ethereum to monad). A request without `rpc`
+gets it: the fields in the table above, which Sippar reads from QuickNode in several requests and
+lays out as rows (QuickNode's raw integer stays in `valueRaw`). On the other 26 a request without
+`rpc` is refused free, with a message saying that chain serves `rpc` commands only.
+
+A chain the model does not serve is refused with a free 400.
 
 ## The six arguments
 
@@ -42,7 +54,7 @@ All six are optional top-level keys, all announced in `supportedParameters`.
 
 | Argument | What it does |
 |---|---|
-| `network` | Which chain. **Omit it and you get Ethereum**, in full, billed in full, with no error. |
+| `network` | Which chain, any of the 46. **Omit it and you get Ethereum**, in full, billed in full, with no error. On the 26 chains without the summary page, send `rpc` beside it. |
 | `fields` | Which rows you pay for. Omit it and you get every row. The legal names are on every narrowed page as `selection.fieldsAvailable`. |
 | `address` | A `0x` + 40 hex account. Adds that account's three rows beside the chain's. Makes the page wider, so name `fields` to keep it narrow. Mixed case is checked as an EIP-55 checksum before anything is bought. |
 | `blocks` | With `address`: scan that account's transactions in the newest block. Capped at 1; older blocks are not served by this field. |
@@ -76,9 +88,19 @@ under a line saying what was read and when. On 2026-10-09 there were seven: `eth
 `trace_filter`, `eth_call`. **The live list is
 in the refusal:** a command the listing does not serve is refused free with a message naming every
 command it does serve, so send one when you need to know. Every command that writes is refused.
-**All seven are proven on Ethereum only (2026-10-09).** On another chain, a command may not be
-served, and old-block (archive) reads and traces vary most from chain to chain. The
-`rpc` object may be at most 1,000 bytes.
+**All seven are proven on Ethereum (2026-10-09).** On another chain, a command may not be
+served, and old-block (archive) reads and traces vary most from chain to chain. An unsupported
+command comes back as QuickNode's own error, unchanged. On the 26 chains added on 2026-10-09 (0g to zksync above), each answers
+`eth_chainId` with its own chain id, and `eth_getBlockByNumber` is proven on zksync; nothing else
+is proven there yet. The `rpc` object may be at most 1,000 bytes.
+
+The same command on another chain, here the newest block on zkSync:
+
+```json
+{"model": "quicknode-blockchain-data", "network": "zksync",
+ "rpc": {"method": "eth_getBlockByNumber", "params": ["latest", false]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
 
 ### `eth_getLogs`: transfer logs for a token, or for a wallet
 
@@ -271,6 +293,9 @@ refusal bills nothing on an open channel.
 
 ## Changes
 
+- 3.5.1 (2026-10-09): `rpc` stated as the way in on all 46 chains; the summary page is an extra on
+  the first 20.
+- 3.5.0 (2026-10-09): `rpc` on 26 more chains with no page (`rpc`-only), from avalanche to zksync.
 - 3.4.1 (2026-10-09): removed the price-feed example from `eth_call`.
 - 3.4.0 (2026-10-09): `eth_call`, a contract's read-only answer at any block, with long results
   served in slices.
