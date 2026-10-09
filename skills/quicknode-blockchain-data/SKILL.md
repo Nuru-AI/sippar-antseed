@@ -1,8 +1,8 @@
 ---
 name: quicknode-blockchain-data
-description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, a transaction's receipt, a transaction itself, an account's native balance at any block, and the calls and internal transfers that touched a wallet. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, eth_getTransactionByHash, eth_getBalance, balance at a past block, trace_filter, internal transactions, native coin moved by a contract, transaction receipt, transaction by hash, rpc on AntSeed, sippar-chain-state, which chains does quicknode-blockchain-data serve.
+description: Buy live facts about one EVM chain from Sippar's quicknode-blockchain-data model on AntSeed, served as QuickNode returns them. Use it for the current block, gas and fees, how full the last block was, native and ERC-20 balances, one account's balances and transaction count, any ERC-20 balance by contract, transfer logs for a token or for a wallet over a block range, a block's header with its transaction hashes, a transaction's receipt, a transaction itself, an account's native balance at any block, the calls and internal transfers that touched a wallet, and any read-only contract call at any block. Triggers on - chain state, block number, gas price on Base, balance of an address on Arbitrum, token balance by contract, eth_getLogs, transfer logs, tokens a wallet sent or received, eth_getBlockByNumber, eth_getTransactionReceipt, eth_getTransactionByHash, eth_getBalance, balance at a past block, trace_filter, internal transactions, native coin moved by a contract, eth_call, balanceOf at a past block, a price feed's answer at a past block, transaction receipt, transaction by hash, rpc on AntSeed, sippar-chain-state, which chains does quicknode-blockchain-data serve.
 metadata:
-  version: "3.3.0"
+  version: "3.4.0"
   updated: "2026-10-09"
 ---
 
@@ -30,6 +30,7 @@ answers with the same data, arguments and rate.
 | One transaction itself: from, to, value, input, nonce, block | the `rpc` answer, QuickNode's reply to `eth_getTransactionByHash` |
 | An account's native balance at any block, including old ones | the `rpc` answer, QuickNode's reply to `eth_getBalance` |
 | The calls and internal transfers that touched a wallet, including native coin a contract sent it | the `rpc` answer, QuickNode's reply to `trace_filter` |
+| What a contract's read-only function returned at any block: a token balance then, a price feed's answer then | the `rpc` answer, QuickNode's reply to `eth_call` |
 
 20 chains on 2026-10-08: ethereum, base, arbitrum, bnb, polygon, optimism, blast, celo, mantle,
 unichain, ink, soneium, world chain, gnosis, scroll, linea, fantom, sonic, berachain, monad. A
@@ -46,7 +47,7 @@ All six are optional top-level keys, all announced in `supportedParameters`.
 | `address` | A `0x` + 40 hex account. Adds that account's three rows beside the chain's. Makes the page wider, so name `fields` to keep it narrow. Mixed case is checked as an EIP-55 checksum before anything is bought. |
 | `blocks` | With `address`: scan that account's transactions in the newest block. Capped at 1; older blocks are not served by this field. |
 | `tokens` | With `address`: up to 10 ERC-20 contracts, as a list or a comma string. Two rows per contract, the balance in the token's smallest unit and the contract's own `decimals()`. A contract that does not answer shows as failed, never as zero. A contract already on the chain's own token list is not read here: sent alone it is refused free with a note; sent beside other contracts it is silently left out. For those, ask for `addressErc20Balance` in `fields` instead. |
-| `rpc` | One read-only QuickNode command, answered as QuickNode returns it: `eth_getLogs` (transfer logs), `eth_getBlockByNumber` (a block), `eth_getTransactionReceipt` (a receipt), `eth_getTransactionByHash` (a transaction), `eth_getBalance` (a native balance at a block) or `trace_filter` (the traces that touched a wallet). Send it alone, with `network` for a chain other than Ethereum. |
+| `rpc` | One read-only QuickNode command, answered as QuickNode returns it: `eth_getLogs` (transfer logs), `eth_getBlockByNumber` (a block), `eth_getTransactionReceipt` (a receipt), `eth_getTransactionByHash` (a transaction), `eth_getBalance` (a native balance at a block), `trace_filter` (the traces that touched a wallet) or `eth_call` (a contract's read-only answer at a block). Send it alone, with `network` for a chain other than Ethereum. |
 
 Example, two fields on Base:
 
@@ -70,12 +71,12 @@ Through a translating client, the same arguments go under `metadata.sippar` or a
 ## `rpc`: one QuickNode command
 
 Read-only QuickNode commands, opened one at a time, each answered exactly as QuickNode returns it
-under a line saying what was read and when. On 2026-10-09 there were six: `eth_getLogs`,
+under a line saying what was read and when. On 2026-10-09 there were seven: `eth_getLogs`,
 `eth_getBlockByNumber`, `eth_getTransactionReceipt`, `eth_getTransactionByHash`, `eth_getBalance`,
-`trace_filter`. **The live list is
+`trace_filter`, `eth_call`. **The live list is
 in the refusal:** a command the listing does not serve is refused free with a message naming every
 command it does serve, so send one when you need to know. Every command that writes is refused.
-**All six are proven on Ethereum only (2026-10-09).** On another chain, a command may not be
+**All seven are proven on Ethereum only (2026-10-09).** On another chain, a command may not be
 served, and old-block (archive) reads and traces vary most from chain to chain. The
 `rpc` object may be at most 1,000 bytes.
 
@@ -210,6 +211,33 @@ or a bridge. Traces do. Here, every trace sent to `0xd8da6bf2…6045` over a blo
 - Name a narrow block range and a `count`: a busy wallet can have more traces than one page
   holds.
 
+### `eth_call`: a contract's read-only answer at a block
+
+Runs a contract's read-only function at the block you name, as of that block. Nothing is sent to
+the chain. Here, USDC's `balanceOf(0xd8da6bf2…6045)` at block 15,000,000:
+
+```json
+{"model": "quicknode-blockchain-data", "network": "ethereum",
+ "rpc": {"method": "eth_call",
+         "params": [{"to": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                     "data": "0x70a08231000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045"},
+                    "0xe4e1c0"]},
+ "messages": [{"role": "user", "content": "chain state"}]}
+```
+
+- Exactly two params: a call object and a block (`latest`, `earliest`, `safe`, `finalized`, or a
+  `0x` block number). The call object takes `to` (the contract, `0x` and 40 hex characters,
+  required), `data` (the encoded function call, even-length `0x` hex) and `from`. `gas`, `value`
+  or any other key is refused free with a message naming the three it takes.
+- The answer is QuickNode's reply, unchanged: the function's return value as hex. A call that
+  reverts is served as QuickNode returns the revert.
+- Typical reads: an ERC-20 `balanceOf` at a past block, or a price feed contract's answer at a past
+  block (a Chainlink aggregator, for one), an on-chain price as that contract reported it then.
+- **When `result` is too long for one page**, every other field is whole and `result` is served as
+  an exact slice of QuickNode's string. A line above the JSON says which characters this page holds
+  and what to send next: the same request with `"resultFrom": <number>` inside `rpc`. The slices,
+  joined in order, are the whole value. `resultFrom` is accepted on `eth_call` only.
+
 ## Reading the page
 
 The page is a markdown table for a person with the same rows fenced as JSON beneath it for a
@@ -244,6 +272,8 @@ refusal bills nothing on an open channel.
 
 ## Changes
 
+- 3.4.0 (2026-10-09): `eth_call`, a contract's read-only answer at any block, with long results
+  served in slices.
 - 3.3.0 (2026-10-09): `trace_filter`, the calls and internal transfers that touched a wallet,
   with wide answers resumed by `after`.
 - 3.2.0 (2026-10-08): `eth_getBalance`, an account's native balance at any block.

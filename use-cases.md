@@ -52,6 +52,10 @@ the account's native coin balance at that block, old blocks included, in wei as 
 wallet, including ETH a router or bridge paid it, which no token log records. Wide answers resume
 with `after`.
 
+**A contract's answer at a past block.** `rpc` with `eth_call`, the contract as `to`, the encoded
+function call as `data`, and a block number: a token's `balanceOf` for an account at that block, or a
+price feed contract's answer at that block, as QuickNode returns it.
+
 **Over time.** The pages hold a single moment. Sample the same request on a schedule and keep
 the pages; `asOf` and a row's `id` identify each sample.
 
@@ -141,8 +145,10 @@ Each is a sequence of calls. The value named in one page goes into the next requ
 
 ## What the pages are not
 
-No prices on the chain-state page, no history on any page, no derived figures anywhere. A
-balance is the contract's ledger entry at the `latest` block, which is not finalized. A page
+No derived figures anywhere. The chain-state page itself holds no prices and no history: its
+balances are the contract's ledger entry at the `latest` block, which is not finalized. Past
+blocks come only through `rpc`, as QuickNode returns them, and a price only as a price feed
+contract reports it through `eth_call`. A page
 with `ok: false` rows is a page with gaps; `counts.rowsFailed` says how many. If a figure looks
 wrong, read the page's notes before deciding it is: one chain's real gas limit looks absurd
 until you know that chain.
