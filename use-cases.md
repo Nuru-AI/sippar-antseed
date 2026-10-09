@@ -111,6 +111,23 @@ person's own posts.
 Keywords and names work; plain questions and single generic words do not (a coin ticker on its
 own returns giveaway spam).
 
+## sippar-flight-search
+
+Google Flights fares for one route and date. One call is one search; the page carries every
+itinerary Google showed, with its price for the whole party.
+
+**Is this fare good?** One way on the date you want: `price_insights` says whether the price is
+low, typical or high for the route, with the typical range and about two months of daily lows.
+
+**The cheapest day in a window.** One call per date across the window (at most 8 in flight),
+then compare the cheapest `price` on each page.
+
+**A round trip for a group.** `FROM TO DATE RETURN-DATE ADULTS`: round-trip totals for the party,
+listed by outbound flight. For return-flight options, search the return as its own one-way line.
+
+**Where can I go from here.** One call per candidate destination on the same date, then rank by
+the cheapest fare.
+
 ## Combinations
 
 Each is a sequence of calls. The value named in one page goes into the next request.
@@ -142,6 +159,8 @@ Each is a sequence of calls. The value named in one page goes into the next requ
 10. **What is said, then what is so.** `sippar-x-social` for what X is saying about a story this
    week; then `tavily-web-search` for the sources behind it, or, for an onchain project,
    `quicknode-blockchain-data` or `nansen-crypto-screener` to check the claims against the data.
+11. **A trip, then the news at the destination.** `sippar-flight-search` for the fares; then
+   `tavily-web-search` for anything that could move the plan there (strikes, weather, events).
 
 ## What the pages are not
 

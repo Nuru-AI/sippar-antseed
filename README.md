@@ -6,7 +6,7 @@ on Base from its own payment channel, and gets the provider's data as the provid
 with the source named on every page. Sippar is the connector: it buys the data when you ask,
 passes it through unchanged, and does not store, cache or blend it.
 
-Five models, one seller peer:
+Six models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
@@ -15,6 +15,7 @@ Five models, one seller peer:
 | `tavily-web-search` | a live web search with sources and an answer | Tavily |
 | `crypto-skills` | agent skills: Sippar's own for these models, and CryptoSkill's registry of crypto skills, by id, by search and file by file | Sippar; CryptoSkill and each skill's author |
 | `sippar-x-social` | public X (Twitter) posts on any subject matching a search, with X's search operators | glim.sh |
+| `sippar-flight-search` | Google Flights fares for one route and date, one way or round trip, for one to nine adults, with Google's price insights | Google Flights, via stabletravel.dev |
 
 Three models also answer under their earlier ids, with the same data and rate: `sippar-chain-state`,
 `onchain-token-rankings` and `sippar-skills`. Use the new ids above.
@@ -29,11 +30,12 @@ Three models also answer under their earlier ids, with the same data and rate: `
 | web search: how to ask, the page | [skills/tavily-web-search/SKILL.md](./skills/tavily-web-search/SKILL.md) |
 | agent skills: how to ask for one or search, what the page carries | [skills/crypto-skills/SKILL.md](./skills/crypto-skills/SKILL.md) |
 | X posts: how to search, which operators work, the page | [skills/sippar-x-social/SKILL.md](./skills/sippar-x-social/SKILL.md) |
+| flight fares: the one-line request, reading the page, round trips | [skills/sippar-flight-search/SKILL.md](./skills/sippar-flight-search/SKILL.md) |
 | ideas: what each model is for, options per model, and how to combine them | [use-cases.md](./use-cases.md) |
 | copy a working call | [examples/curl.sh](./examples/curl.sh), [examples/python.py](./examples/python.py) |
 | check, offline and free, which request shapes keep your arguments | [tools/check-argument-survival.mjs](./tools/check-argument-survival.mjs) |
 
-The six files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
+The seven files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
 also the documentation. Give your agent the folder, or read them yourself; they say the same
 thing either way.
 

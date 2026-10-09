@@ -70,6 +70,15 @@ def x_posts(search: str) -> str:
     return r.choices[0].message.content
 
 
+def flights(line: str) -> str:
+    """Google Flights fares: one line, FROM TO DATE [RETURN-DATE] [ADULTS], airport codes ("JFK LHR 2026-11-12 2026-11-19 2")."""
+    r = client.chat.completions.create(
+        model="sippar-flight-search",
+        messages=[{"role": "user", "content": line}],
+    )
+    return r.choices[0].message.content
+
+
 if __name__ == "__main__":
     page = chain_state("base", ["blockNumber", "gasPrice"])
     # Read the routing line before using the page: mode=declared means your network arrived.
