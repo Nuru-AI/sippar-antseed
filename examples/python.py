@@ -6,6 +6,7 @@ translated by the proxy and your arguments are dropped. `extra_body` is flattene
 request body by the SDK, which is exactly the top-level shape the models read.
 Transport rules: the sippar-antseed-buyer skill.
 """
+import json
 import os
 from openai import OpenAI
 
@@ -66,6 +67,19 @@ def x_posts(search: str) -> str:
     r = client.chat.completions.create(
         model="sippar-x-social",
         messages=[{"role": "user", "content": search}],
+    )
+    return r.choices[0].message.content
+
+
+def linkedin_posts(search: str, posts: int = 10, cursor: str | None = None) -> str:
+    """Public LinkedIn posts: link, date, author and counts per post (no post text). `posts` (up to
+    50) and `cursor` (an earlier answer's next.cursor) go INSIDE the message text, as JSON."""
+    ask = {"query": search, "posts": posts}
+    if cursor:
+        ask["cursor"] = cursor
+    r = client.chat.completions.create(
+        model="sippar-linkedin-social",
+        messages=[{"role": "user", "content": json.dumps(ask)}],
     )
     return r.choices[0].message.content
 

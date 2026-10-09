@@ -2,7 +2,7 @@
 name: sippar-flight-search
 description: Search Google Flights fares for one route and date through Sippar's sippar-flight-search model on AntSeed, served as the search returns them. Use it when an agent on AntSeed needs live flight options and prices between two airports - one way or round trip, for one to nine adults - with airlines, times, stops and Google's price insights. Triggers on - flight search on AntSeed, flight prices, airfare, cheapest flight, fares from X to Y, round trip price, is this fare low, sippar-flight-search.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   updated: "2026-10-09"
 ---
 
@@ -17,7 +17,7 @@ each search from stabletravel.dev. Transport (pin, request shape, the 8-in-fligh
 The last user message is one line in a fixed format. There are no arguments.
 
 ```
-FROM TO DATE [RETURN-DATE] [ADULTS]
+FROM TO DATE [RETURN-DATE] [ADULTS] [OPTIONS]
 ```
 
 ```json
@@ -32,6 +32,13 @@ FROM TO DATE [RETURN-DATE] [ADULTS]
 - `ADULTS` is 1 to 9 (default 1). Prices are for the whole party, so ask for the party you are
   pricing; seat availability differs at two seats, and doubling a one-seat price can name the wrong
   airline.
+- Options, any order, after the rest: `class:economy|premium|business|first`, `children:N`,
+  `infants:N` (own seat), `lap:N` (infant on a lap; one per adult), `currency:EUR` (any
+  three-letter code; default USD). Nine travellers at most. Example:
+  `JFK LHR 2026-11-12 2026-11-19 2 class:business children:1`.
+- There is **no stops, price or airline filter**. Every itinerary on the page carries its stops,
+  price and airline, so filter the list yourself. Such a filter could empty a search, and an empty
+  search is still billed. `stops:`, `max:` and `airlines:` are refused, free, and the refusal says so.
 - The words `to`, `adults` and `pax` are ignored, so `TLV to ATH 2026-10-26 2 adults` works.
   A sentence ("cheap flights to Athens next week") is refused, free, and the refusal shows the format.
 
@@ -67,6 +74,9 @@ The JSON:
 - `price_insights`: `lowest_price`, `price_level` (`low`, `typical` or `high`) and
   `typical_price_range` `[low, high]`. One-way pages also carry `price_history`
   (`[unix seconds, price]` pairs, about two months).
+- `search_metadata.google_flights_url`: the same search on Google Flights. Give it to a person who
+  wants to book: Google shows the booking options there. This model has no booking links of its
+  own, and it cannot fetch return flights for a chosen outbound.
 - `airports`: names, cities and countries for both ends. `search_parameters` echoes the request;
   in it and in `Request sent`, `type` `"1"` is a round trip and `"2"` one way.
 
@@ -97,4 +107,6 @@ US domestic route is the widest), a round trip for two 7,269. A refused line bil
 
 ## Changes
 
+- 1.1.0 (2026-10-09): options (class, children, infants, lap, currency); filter stops, price and
+  airline from the list; the Google Flights link for booking.
 - 1.0.0 (2026-10-09): first publish.

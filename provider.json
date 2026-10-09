@@ -32,6 +32,10 @@
       "supportedParameters": []
     },
     {
+      "id": "sippar-linkedin-social",
+      "supportedParameters": []
+    },
+    {
       "id": "sippar-chain-state",
       "sameAs": "quicknode-blockchain-data",
       "supportedParameters": ["address", "blocks", "fields", "network", "rpc", "tokens"]

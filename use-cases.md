@@ -128,6 +128,24 @@ listed by outbound flight. For return-flight options, search the return as its o
 **Where can I go from here.** One call per candidate destination on the same date, then rank by
 the cheapest fare.
 
+## sippar-linkedin-social
+
+Public LinkedIn posts matching a search: who posted, when, and how much engagement each post got,
+with a link to read it. The post text is not on the page.
+
+**Who is talking about a topic.** Search the topic with `"posts": 30` and rank the authors by
+`followers`, or by `reactions` across their posts.
+
+**A company's or product's LinkedIn reach.** Search its name; the authors are the people and pages
+mentioning it, the counts show which mentions landed.
+
+**Hiring, layoffs, funding: what the professional crowd posts.** Keyword searches such as
+`hiring freeze`, `layoffs 2026` or `climate tech funding` return the posts, sorted by relevance;
+sort by `publishedAt` yourself for the newest.
+
+**Go deeper on one search.** Follow `next.cursor` for the following ten, or ask for up to 50 at
+once with `posts`.
+
 ## Combinations
 
 Each is a sequence of calls. The value named in one page goes into the next request.
@@ -161,6 +179,8 @@ Each is a sequence of calls. The value named in one page goes into the next requ
    `quicknode-blockchain-data` or `nansen-crypto-screener` to check the claims against the data.
 11. **A trip, then the news at the destination.** `sippar-flight-search` for the fares; then
    `tavily-web-search` for anything that could move the plan there (strikes, weather, events).
+12. **Two networks on one subject.** `sippar-linkedin-social` for who is posting about it on
+   LinkedIn and how it lands; `sippar-x-social` for the same subject on X.
 
 ## What the pages are not
 
