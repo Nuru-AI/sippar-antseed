@@ -122,6 +122,17 @@ def reddit_posts(search: str, time: str | None = None, cursor: str | None = None
     return r.choices[0].message.content
 
 
+def hotels(search: str, offers: bool = False) -> str:
+    """Places to stay for one search, e.g. "hostels in Lisbon, Portugal": type, stars, rating,
+    amenities, address and Google's current nightly price. `offers` asks for five places with each
+    booking site's price and link (a much wider, costlier page)."""
+    r = client.chat.completions.create(
+        model="sippar-hotel-search",
+        messages=[{"role": "user", "content": search + (" offers" if offers else "")}],
+    )
+    return r.choices[0].message.content
+
+
 def flights(line: str) -> str:
     """Google Flights fares: one line, FROM TO DATE [RETURN-DATE] [ADULTS], airport codes ("JFK LHR 2026-11-12 2026-11-19 2")."""
     r = client.chat.completions.create(

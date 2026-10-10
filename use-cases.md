@@ -166,6 +166,20 @@ outage or a news story started, then open the busiest ones.
 
 **Go deeper on one search.** Follow `next.cursor` for the following ten.
 
+## sippar-hotel-search
+
+Places to stay that Google Maps finds for one search, with star class, rating, amenities and the
+price Google shows for its default night.
+
+**Where to stay, at what level.** `hotels in Lisbon, Portugal` or `hostels in Lisbon, Portugal`,
+then sort by `hotel_price_for_dates` and `rating` to shortlist.
+
+**Compare the booking sites.** End the line with `offers` and each place lists every site's price
+and link, so you can say where a room is cheapest for that night.
+
+**Filter on amenities or stars.** Keep the places with `"Free breakfast": true` in `hotel_amenities`, or
+four stars and up, from the list.
+
 ## sippar-github
 
 Public GitHub: read a repository, its code and its issues.
@@ -228,6 +242,9 @@ Each is a sequence of calls. The value named in one page goes into the next requ
 15. **Three networks on one subject.** `sippar-reddit-social` for the communities and threads
    discussing it; `sippar-x-social` for the live conversation on X; `sippar-linkedin-social` for
    who posts about it professionally.
+16. **Flight, then a bed.** `sippar-flight-search` for the fare to a city; then `sippar-hotel-search`
+   for places to stay there, with the price level for a night and, with `offers`, where it is
+   cheapest.
 
 ## What the pages are not
 
