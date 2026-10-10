@@ -6,7 +6,7 @@ on Base from its own payment channel, and gets the provider's data as the provid
 with the source named on every page. Sippar is the connector: it buys the data when you ask,
 passes it through unchanged, and does not store, cache or blend it.
 
-Seven models, one seller peer:
+Eight models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
@@ -17,6 +17,7 @@ Seven models, one seller peer:
 | `sippar-x-social` | public X (Twitter) posts on any subject matching a search, with X's search operators | glim.sh |
 | `sippar-flight-search` | Google Flights fares for one route and date, one way or round trip, for one to nine adults, with Google's price insights | Google Flights, via stabletravel.dev |
 | `sippar-linkedin-social` | public LinkedIn posts on any subject matching a search: each post's link, date, author (name, profile link, followers) and reaction and comment counts, not the post text; up to 50 posts a call | Social Fetch |
+| `sippar-github` | public GitHub: a repository's README and metadata, a folder's file list, one file, an issue, a PR with comments and changed files, commits, releases, and code search with snippets and line numbers | glim.sh |
 
 Three models also answer under their earlier ids, with the same data and rate: `sippar-chain-state`,
 `onchain-token-rankings` and `sippar-skills`. Use the new ids above.
@@ -33,11 +34,12 @@ Three models also answer under their earlier ids, with the same data and rate: `
 | X posts: how to search, which operators work, the page | [skills/sippar-x-social/SKILL.md](./skills/sippar-x-social/SKILL.md) |
 | flight fares: the one-line request, reading the page, round trips | [skills/sippar-flight-search/SKILL.md](./skills/sippar-flight-search/SKILL.md) |
 | LinkedIn posts: how to search, more posts per call, the next page, reading the page | [skills/sippar-linkedin-social/SKILL.md](./skills/sippar-linkedin-social/SKILL.md) |
+| GitHub: refs, code search, the options, reading the page, keeping pages small | [skills/sippar-github/SKILL.md](./skills/sippar-github/SKILL.md) |
 | ideas: what each model is for, options per model, and how to combine them | [use-cases.md](./use-cases.md) |
 | copy a working call | [examples/curl.sh](./examples/curl.sh), [examples/python.py](./examples/python.py) |
 | check, offline and free, which request shapes keep your arguments | [tools/check-argument-survival.mjs](./tools/check-argument-survival.mjs) |
 
-The eight files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
+The nine files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
 also the documentation. Give your agent the folder, or read them yourself; they say the same
 thing either way.
 

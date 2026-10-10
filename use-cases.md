@@ -146,6 +146,25 @@ sort by `publishedAt` yourself for the newest.
 **Go deeper on one search.** Follow `next.cursor` for the following ten, or ask for up to 50 at
 once with `posts`.
 
+## sippar-github
+
+Public GitHub: read a repository, its code and its issues.
+
+**Understand a library before using it.** `owner/repo` for the README and default branch, then the
+docs folder's file list and its files (or `llms.txt` if the repository has one).
+
+**Where is this defined?** `symbol:name` with `"repo": "owner/name"` and `"kind": "code"`: the files
+and lines that define it; then fetch the file from a hit's `url` for the body.
+
+**Has anyone hit this error?** The exact error message in quotes with `is:issue` and `"repo"`:
+the issues that mention it, then the issue itself for the thread.
+
+**What changed?** `owner/repo/releases/latest` for the release notes, or
+`owner/repo/commits/<branch>/<path>` for one file's history and `/commit/<sha>` for a diff.
+
+**Find projects.** A repository search with qualifiers: `x402 language:typescript`,
+`created:>2026-09-01 sort:stars`, or `topics/<name>`.
+
 ## Combinations
 
 Each is a sequence of calls. The value named in one page goes into the next request.
@@ -181,6 +200,11 @@ Each is a sequence of calls. The value named in one page goes into the next requ
    `tavily-web-search` for anything that could move the plan there (strikes, weather, events).
 12. **Two networks on one subject.** `sippar-linkedin-social` for who is posting about it on
    LinkedIn and how it lands; `sippar-x-social` for the same subject on X.
+13. **Read the code, then the chain.** `sippar-github` for a protocol's contract source or its
+   deployment addresses in the repository; then `quicknode-blockchain-data` with `rpc` on those
+   addresses to see what they hold and do now.
+14. **The repository, then the conversation.** `sippar-github` for a library's latest release notes;
+   then `sippar-x-social` or `tavily-web-search` for what people say about that release.
 
 ## What the pages are not
 

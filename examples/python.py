@@ -71,6 +71,18 @@ def x_posts(search: str) -> str:
     return r.choices[0].message.content
 
 
+def github(line: str, repo: str | None = None, kind: str | None = None, per_page: int | None = None, page: int | None = None) -> str:
+    """Public GitHub through glim.sh: a ref ('owner/repo', a github.com URL) or a GitHub search.
+    `repo`, `kind`, `per_page` and `page` go INSIDE the message text, as JSON."""
+    opts = {k: v for k, v in {"repo": repo, "kind": kind, "per_page": per_page, "page": page}.items() if v is not None}
+    content = json.dumps({"query": line, **opts}) if opts else line
+    r = client.chat.completions.create(
+        model="sippar-github",
+        messages=[{"role": "user", "content": content}],
+    )
+    return r.choices[0].message.content
+
+
 def linkedin_posts(search: str, posts: int = 10, cursor: str | None = None) -> str:
     """Public LinkedIn posts: link, date, author and counts per post (no post text). `posts` (up to
     50) and `cursor` (an earlier answer's next.cursor) go INSIDE the message text, as JSON."""

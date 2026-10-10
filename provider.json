@@ -36,6 +36,10 @@
       "supportedParameters": []
     },
     {
+      "id": "sippar-github",
+      "supportedParameters": []
+    },
+    {
       "id": "sippar-chain-state",
       "sameAs": "quicknode-blockchain-data",
       "supportedParameters": ["address", "blocks", "fields", "network", "rpc", "tokens"]

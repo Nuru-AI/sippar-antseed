@@ -53,10 +53,13 @@ case "${1:-}" in
     call "{\"model\":\"sippar-flight-search\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
   linkedin) # LinkedIn posts: keywords; pass the search as $2. More posts: content '{"query":"…","posts":30}'
     call "{\"model\":\"sippar-linkedin-social\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
+  github) # GitHub: a ref (owner/repo, a github.com URL) or a GitHub search; pass it as $2.
+    # Options: content '{"query":"symbol:useRouter","repo":"vercel/next.js","kind":"code","per_page":10}'
+    call "{\"model\":\"sippar-github\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
   translated) # a client that must post the Anthropic shape: arguments ride metadata.sippar and survive
     curl -s "$PROXY/v1/messages" -H 'content-type: application/json' -H "x-antseed-pin-peer: $PEER" \
       -d '{"model":"quicknode-blockchain-data","max_tokens":1024,
            "metadata":{"sippar":{"network":"base","fields":["blockNumber","gasPrice"]}},
            "messages":[{"role":"user","content":"chain state"}]}' ;;
-  *) echo "usage: $0 chain | account 0x… | logs | wallet 0x… | block | tokens | perps | search 'question' | skill 'chains/aave' | x 'Formula 1 since:2026-10-01' | flights 'JFK LHR 2026-11-12 2026-11-19 2' | linkedin 'remote work burnout' | translated"; exit 2 ;;
+  *) echo "usage: $0 chain | account 0x… | logs | wallet 0x… | block | tokens | perps | search 'question' | skill 'chains/aave' | x 'Formula 1 since:2026-10-01' | flights 'JFK LHR 2026-11-12 2026-11-19 2' | linkedin 'remote work burnout' | github 'x402-foundation/x402' | translated"; exit 2 ;;
 esac
