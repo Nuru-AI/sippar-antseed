@@ -1,8 +1,8 @@
 ---
 name: sippar-antseed-buyer
-description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search, crypto-skills, sippar-skills, sippar-x-social, sippar-flight-search, sippar-linkedin-social, sippar-github, sippar-reddit-social or sippar-hotel-search from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
+description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search, crypto-skills, sippar-skills, sippar-x-social, sippar-flight-search, sippar-linkedin-social, sippar-github, sippar-reddit-social or sippar-hotel-search from an AntSeed buyer or through an AntSeed API-key gateway. It carries the endpoint (your buyer proxy, or a gateway with your key), the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters, ANTSEED_BASE_URL, antseed: command not found, connection refused on 8377.
 metadata:
-  version: "2.10.0"
+  version: "2.11.0"
   updated: "2026-10-10"
 ---
 
@@ -65,8 +65,18 @@ antseed buyer connection get
 ## 2. Send the chat-completions shape
 
 This seller advertises one API protocol, `openai-chat-completions`. Post to
-`/v1/chat/completions` on your local buyer proxy (`127.0.0.1:8377` by default; `antseed buyer
-start --port` moves it). Any OpenAI-compatible client works on its chat-completions path.
+`/v1/chat/completions` on your AntSeed endpoint, which is one of two things:
+
+- **Your own buyer proxy**, the usual setup: `127.0.0.1:8377` by default (`antseed buyer start
+  --port` moves it). No key.
+- **An AntSeed API-key gateway**, AntSeed's multi-user setup, where one buyer serves many people
+  and each has their own key, limits and wallet. Send `Authorization: Bearer <your key>` to the
+  gateway's address. If `ANTSEED_BASE_URL` and `ANTSEED_API_KEY` are set in your environment,
+  that is your endpoint: post to `$ANTSEED_BASE_URL/chat/completions` with that key, not to
+  8377. You need no `antseed` command and no buyer of your own. The pin, the arguments and the
+  channels below work unchanged.
+
+Any OpenAI-compatible client works on its chat-completions path.
 
 Arguments are top-level keys in the request body, beside `model` and `messages`:
 
@@ -81,6 +91,21 @@ curl http://127.0.0.1:8377/v1/chat/completions \
     "messages": [{"role": "user", "content": "chain state"}]
   }'
 ```
+
+Through a key gateway it is the same body, sent to the gateway with your key:
+
+```bash
+curl "$ANTSEED_BASE_URL/chat/completions" \
+  -H "Authorization: Bearer $ANTSEED_API_KEY" \
+  -H 'content-type: application/json' \
+  -H 'x-antseed-pin-peer: 706fca9c0d0684c30f86209aae0c3565ce1aa69f' \
+  -d '{"model": "sippar-flight-search", "messages": [{"role": "user", "content": "TLV BER 2026-10-20 1"}]}'
+```
+
+Behind a gateway, the `antseed` commands elsewhere in this skill (rates, preflight, activity)
+are optional: the request needs only the endpoint, your key and the pin. `GET
+$ANTSEED_BASE_URL/models` lists what the gateway's buyer can reach, and `GET
+$ANTSEED_BASE_URL/key` shows your own spend and limits.
 
 From the OpenAI Python SDK that is `extra_body={"network": "base", "fields": [...]}` on
 `chat.completions.create`. The SDK flattens `extra_body` into the body. If you write the JSON
@@ -173,6 +198,9 @@ non-zero if the behaviour has moved.
 
 ## Changes
 
+- 2.11.0 (2026-10-10): through an AntSeed API-key gateway. When `ANTSEED_BASE_URL` and
+  `ANTSEED_API_KEY` are set, post there with the key: no local proxy and no `antseed` command
+  are needed.
 - 2.10.0 (2026-10-10): the eleventh model, `sippar-hotel-search`.
 - 2.9.0 (2026-10-10): the tenth model, `sippar-reddit-social`.
 - 2.8.1 (2026-10-10): `nansen-crypto-screener`'s announced list includes `symbols`.
