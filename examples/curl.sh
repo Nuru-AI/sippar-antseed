@@ -40,6 +40,9 @@ case "${1:-}" in
   tokens)  # ten rows by volume on Base and Solana over a week
     call '{"model":"nansen-crypto-screener","chains":["base","solana"],"timeframe":"7d","sort":"volume","rows":10,
            "messages":[{"role":"user","content":"top tokens"}]}' ;;
+  stocks)  # five tokenized stocks on Solana by volume; a ticker with no row is named on the page
+    call '{"model":"nansen-crypto-screener","symbols":["TSLAX","NVDAX","SPYX","GOOGLX","CRCLX"],"chains":["solana"],"sort":"volume","rows":5,
+           "messages":[{"role":"user","content":"stocks"}]}' ;;
   perps)   # Nansen's perpetuals screener; "view" goes alone
     call '{"model":"nansen-crypto-screener","view":"perp-screener",
            "messages":[{"role":"user","content":"perps"}]}' ;;
@@ -56,10 +59,12 @@ case "${1:-}" in
   github) # GitHub: a ref (owner/repo, a github.com URL) or a GitHub search; pass it as $2.
     # Options: content '{"query":"symbol:useRouter","repo":"vercel/next.js","kind":"code","per_page":10}'
     call "{\"model\":\"sippar-github\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
+  reddit) # Reddit posts: keywords; pass the search as $2. Past week: content '{"query":"…","time":"week"}'
+    call "{\"model\":\"sippar-reddit-social\",\"messages\":[{\"role\":\"user\",\"content\":\"$2\"}]}" ;;
   translated) # a client that must post the Anthropic shape: arguments ride metadata.sippar and survive
     curl -s "$PROXY/v1/messages" -H 'content-type: application/json' -H "x-antseed-pin-peer: $PEER" \
       -d '{"model":"quicknode-blockchain-data","max_tokens":1024,
            "metadata":{"sippar":{"network":"base","fields":["blockNumber","gasPrice"]}},
            "messages":[{"role":"user","content":"chain state"}]}' ;;
-  *) echo "usage: $0 chain | account 0x… | logs | wallet 0x… | block | tokens | perps | search 'question' | skill 'chains/aave' | x 'Formula 1 since:2026-10-01' | flights 'JFK LHR 2026-11-12 2026-11-19 2' | linkedin 'remote work burnout' | github 'x402-foundation/x402' | translated"; exit 2 ;;
+  *) echo "usage: $0 chain | account 0x… | logs | wallet 0x… | block | tokens | stocks | perps | search 'question' | skill 'chains/aave' | x 'Formula 1 since:2026-10-01' | flights 'JFK LHR 2026-11-12 2026-11-19 2' | linkedin 'remote work burnout' | github 'x402-foundation/x402' | reddit 'home espresso machine' | translated"; exit 2 ;;
 esac

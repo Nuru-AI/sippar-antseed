@@ -34,6 +34,16 @@ def top_tokens(chains: list[str], timeframe: str = "24h", sort: str = "fdv", row
     return r.choices[0].message.content
 
 
+def tokenized_stocks(symbols: list[str], chains: list[str] | None = None, rows: int = 5) -> str:
+    """Only the named tickers, still ranked; a ticker with no row is named on the page."""
+    r = client.chat.completions.create(
+        model="nansen-crypto-screener",
+        messages=[{"role": "user", "content": "stocks"}],
+        extra_body={"symbols": symbols, "chains": chains or ["solana"], "sort": "volume", "rows": rows},
+    )
+    return r.choices[0].message.content
+
+
 def perp_screener() -> str:
     """`view` goes alone: none of the ranking arguments beside it."""
     r = client.chat.completions.create(
@@ -91,6 +101,22 @@ def linkedin_posts(search: str, posts: int = 10, cursor: str | None = None) -> s
         ask["cursor"] = cursor
     r = client.chat.completions.create(
         model="sippar-linkedin-social",
+        messages=[{"role": "user", "content": json.dumps(ask)}],
+    )
+    return r.choices[0].message.content
+
+
+def reddit_posts(search: str, time: str | None = None, cursor: str | None = None) -> str:
+    """Public Reddit posts: title, thread link, subreddit, author, date, score and comment count per
+    post (no post text or comments). `time` (hour, day, week, month, year, all) and `cursor` (an
+    earlier answer's next.cursor) go INSIDE the message text, as JSON."""
+    ask = {"query": search}
+    if time:
+        ask["time"] = time
+    if cursor:
+        ask["cursor"] = cursor
+    r = client.chat.completions.create(
+        model="sippar-reddit-social",
         messages=[{"role": "user", "content": json.dumps(ask)}],
     )
     return r.choices[0].message.content

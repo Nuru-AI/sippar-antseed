@@ -2,7 +2,7 @@
 name: sippar-skill-adapter
 description: Run any public agent skill on AntSeed. Fetch a skill from Sippar's skills model (skills.sh or CryptoSkill, served as its author published it), keep its process, and swap the provider tooling it assumes for what an AntSeed buyer actually has - Sippar's data models for the data it wants, AntSeed's own catalog for the images, video or text generation it wants, nothing for the installs and API keys it wants, and your own hands for the publishing it wants. Use it before following any third-party skill on AntSeed. Triggers on - adapt this skill, run this skill on AntSeed, the skill wants an API key, the skill says install a CLI, skill asks for fal or inference.sh or HeyGen, map a skill to Sippar models, sippar-skill-adapter.
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   updated: "2026-10-10"
 ---
 
@@ -114,6 +114,14 @@ HyperFrames, whose own skills are on skills.sh). Measured on 2026-10-10: a skill
 page costs 2,500 to 6,000 output tokens on the skills model; the video itself is bought from the
 AntSeed seller at the price the recap shows, and Sippar is not in that payment.
 
+Learned on the first real run (2026-10-10, `genmedia-labs/skills/seedance-2-5-image-to-video`
+mapped to `seedance-2-5-image-to-video-basic`, 5 s at 720p for $0.652): an image seller may
+accept a `size` and still return another shape (1024x1792 asked, 1024x768 returned, twice), so
+check each frame's shape and let the user choose between redoing it and keeping its ratio; the
+first paid call of a session can fail with a 409 "payment channel could not be recovered" and
+succeed on one retry, so retry once before changing anything; a Venice-protocol seller takes the
+duration as `"5s"` and a fal-protocol seller as `"5"`.
+
 ### Marketing (second lane)
 
 A marketing skill wants three things it cannot have here: a listening tool, an ads or analytics
@@ -131,6 +139,7 @@ including this one. Generation on AntSeed is paid to the generation seller, not 
 
 ## Changes
 
+- 1.0.1 (2026-10-10): what the first real run taught the video lane: frame shape, the 409 retry, the two duration shapes.
 - 1.0.0 (2026-10-10): first draft, from the video adapter experiments of 2026-10-09/10 (five
   AntSeed renders, one skills.sh skill adapted end to end) and real served pages of the skills
   model after skills.sh joined it. Generalised from a per-category adapter on Elad's call: one

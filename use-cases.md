@@ -69,6 +69,11 @@ the pages; `asOf` and a row's `id` identify each sample.
 
 **One chain.** `chains: ["base"]` with `rows: 10` for a short, cheap list.
 
+**Tokenized stocks.** `symbols: ["TSLAX", "NVDAX", "SPYX"]` with `chains: ["solana"]` and
+`rows: 5`: the on-chain price, volume and liquidity of those stock tokens, and a line naming any
+ticker with no row. The price is the token's own on-chain price: close to the share price while
+US markets are open, and free to drift on nights and weekends.
+
 **Perpetuals.** `view: perp-screener` alone: Nansen's Hyperliquid perpetuals screener over the
 last 24 hours, as Nansen returns it.
 
@@ -146,6 +151,21 @@ sort by `publishedAt` yourself for the newest.
 **Go deeper on one search.** Follow `next.cursor` for the following ten, or ask for up to 50 at
 once with `posts`.
 
+## sippar-reddit-social
+
+Public Reddit posts matching a search: which threads discuss it, in which subreddits, and how much
+attention each got, with a link to read it. The post text and comments are not on the page.
+
+**Where a topic is discussed.** Search it and group the posts by `subreddit`: the communities
+that talk about it most, and the threads in each.
+
+**Which threads mattered.** Rank by `score` or `numComments` to find the threads worth opening.
+
+**Reaction to something recent.** Set `"time": "week"` (or `day`) to see the threads a launch, an
+outage or a news story started, then open the busiest ones.
+
+**Go deeper on one search.** Follow `next.cursor` for the following ten.
+
 ## sippar-github
 
 Public GitHub: read a repository, its code and its issues.
@@ -205,6 +225,9 @@ Each is a sequence of calls. The value named in one page goes into the next requ
    addresses to see what they hold and do now.
 14. **The repository, then the conversation.** `sippar-github` for a library's latest release notes;
    then `sippar-x-social` or `tavily-web-search` for what people say about that release.
+15. **Three networks on one subject.** `sippar-reddit-social` for the communities and threads
+   discussing it; `sippar-x-social` for the live conversation on X; `sippar-linkedin-social` for
+   who posts about it professionally.
 
 ## What the pages are not
 

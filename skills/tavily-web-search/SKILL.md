@@ -29,7 +29,7 @@ Three optional arguments, as top-level keys beside `messages` (or in `metadata.s
 |---|---|---|
 | `max_results` | a whole number, 5 to 50 | that many results instead of five |
 | `include_raw_content` | `true` / `false` | each result's full page text; only with 5 results |
-| `include_images` | `true` / `false` | image URLs from the search |
+| `include_images` | `true` / `false` | image links: a list of image URLs, as text |
 
 ```json
 {"model": "tavily-web-search",
@@ -38,8 +38,11 @@ Three optional arguments, as top-level keys beside `messages` (or in `metadata.s
 ```
 
 A value outside these rules is refused before anything is bought, and the refusal says which
-rule. Full page text is long: five pages measured 65,153 tokens, so it is served for five results
-only. `x-antseed-required-parameters` may name these three; any other name refuses every call.
+rule. `include_images` returns links, not images: Tavily's `images` field is a list of URLs on
+the sites that host them, and no image file comes through AntSeed. Fetch an image from its link
+if you need it. Full page text is long: five pages measured 65,153 tokens, so it is served for
+five results only. `x-antseed-required-parameters` may name these three; any other name refuses
+every call.
 
 ## Reading the page
 
@@ -60,6 +63,6 @@ results with full page text 65,153. A refusal bills nothing on an open channel.
 
 ## Changes
 
-- 1.1.0 (2026-10-10): `max_results`, `include_raw_content` and `include_images`.
+- 1.1.0 (2026-10-10): `max_results`, `include_raw_content` and `include_images` (image links).
 - 1.0.1 (2026-10-08): skills referred to by name.
 - 1.0.0 (2026-10-08): first publish.

@@ -173,9 +173,9 @@ const CASES = [
     headers: {
       'x-sippar-network': 'base', 'x-sippar-fields': 'blockNumber,chainId', 'x-sippar-address': '0x0000000000000000000000000000000000000001',
       'x-sippar-tokens': '0x0000000000000000000000000000000000000002', 'x-sippar-chains': 'base,solana', 'x-sippar-rows': '10',
-      'x-sippar-view': 'perp-screener', 'x-sippar-rpc': '{"method":"eth_getLogs","params":[{"address":"0x0000000000000000000000000000000000000003"}]}',
+      'x-sippar-view': 'perp-screener', 'x-sippar-symbols': 'TSLAX,NVDAX', 'x-sippar-rpc': '{"method":"eth_getLogs","params":[{"address":"0x0000000000000000000000000000000000000003"}]}',
     },
-    expect: { headerNetwork: 'base', headerCount: 8 },
+    expect: { headerNetwork: 'base', headerCount: 9 },
   },
 ];
 

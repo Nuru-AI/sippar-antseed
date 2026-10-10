@@ -13,7 +13,7 @@
     },
     {
       "id": "nansen-crypto-screener",
-      "supportedParameters": ["chains", "rows", "sort", "timeframe", "view"]
+      "supportedParameters": ["chains", "rows", "sort", "symbols", "timeframe", "view"]
     },
     {
       "id": "tavily-web-search",
@@ -40,6 +40,10 @@
       "supportedParameters": []
     },
     {
+      "id": "sippar-reddit-social",
+      "supportedParameters": []
+    },
+    {
       "id": "sippar-chain-state",
       "sameAs": "quicknode-blockchain-data",
       "supportedParameters": ["address", "blocks", "fields", "network", "rpc", "tokens"]
@@ -47,7 +51,7 @@
     {
       "id": "onchain-token-rankings",
       "sameAs": "nansen-crypto-screener",
-      "supportedParameters": ["chains", "rows", "sort", "timeframe", "view"]
+      "supportedParameters": ["chains", "rows", "sort", "symbols", "timeframe", "view"]
     },
     {
       "id": "sippar-skills",
