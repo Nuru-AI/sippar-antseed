@@ -1,14 +1,14 @@
 ---
 name: sippar-antseed-buyer
-description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search, crypto-skills, sippar-x-social, sippar-flight-search, sippar-linkedin-social or sippar-github from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
+description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search, crypto-skills, sippar-skills, sippar-x-social, sippar-flight-search, sippar-linkedin-social or sippar-github from an AntSeed buyer. It carries the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters.
 metadata:
-  version: "2.6.0"
-  updated: "2026-10-09"
+  version: "2.8.0"
+  updated: "2026-10-10"
 ---
 
 # Reaching Sippar's models on AntSeed
 
-Sippar sells eight models on AntSeed. Each one is a provider's data or files served as the
+Sippar sells nine models on AntSeed. Each one is a provider's data or files served as the
 provider returns them, with the source named on every page. This skill is about the transport:
 how a request reaches the right seller with its arguments intact, and how to tell from the
 answer that it did. What each model answers, and what you can do with it, is in its own skill:
@@ -19,14 +19,16 @@ answer that it did. What each model answers, and what you can do with it, is in 
 | `nansen-crypto-screener` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, from Nansen, plus Nansen's perpetuals screener | the `nansen-crypto-screener` skill |
 | `tavily-web-search` | a live web search with sources, from Tavily | the `tavily-web-search` skill |
 | `crypto-skills` | agent skills: our own, and CryptoSkill's registry of crypto skills, as their authors published them. Send a skill name, an id or two or three keywords as the message, never a sentence | the `crypto-skills` skill |
+| `sippar-skills` | the aggregator: our own, skills.sh's directory (every domain) and CryptoSkill's registry, as their authors published them. Send a skill name, an id (`owner/repo/skill` or `category/name`) or two or three keywords, never a sentence | the `sippar-skills` skill; `sippar-skill-adapter` to run one on AntSeed |
 | `sippar-x-social` | public X (Twitter) posts on any subject matching a search, from glim.sh. Send keywords, names or X operators, never a sentence | the `sippar-x-social` skill |
 | `sippar-flight-search` | Google Flights fares for one route and date, via stabletravel.dev. Send one line, `FROM TO DATE [RETURN-DATE] [ADULTS]` with airport codes, never a sentence | the `sippar-flight-search` skill |
 | `sippar-linkedin-social` | public LinkedIn posts matching a search, from Social Fetch: link, date, author and counts per post, no post text. Send keywords; `posts` and `cursor` go inside the message text as JSON | the `sippar-linkedin-social` skill |
 | `sippar-github` | public GitHub from glim.sh: a repository, a folder's file list, a file, an issue or PR, commits, releases, code search. Send a ref (`owner/repo`, a github.com URL) or a GitHub search; `repo`, `kind`, `per_page` and `page` go inside the message text as JSON | the `sippar-github` skill |
 
-Three models also answer under their earlier ids, with the same data, arguments and rate:
-`sippar-chain-state` (now `quicknode-blockchain-data`), `onchain-token-rankings` (now
-`nansen-crypto-screener`) and `sippar-skills` (now `crypto-skills`). Use the new ids.
+Two models also answer under their earlier ids, with the same data, arguments and rate:
+`sippar-chain-state` (now `quicknode-blockchain-data`) and `onchain-token-rankings` (now
+`nansen-crypto-screener`). Use the new ids. `sippar-skills` is not an old id of `crypto-skills`:
+it is the aggregator model, and `crypto-skills` the CryptoSkill-only one.
 
 Seller peer `706fca9c0d0684c30f86209aae0c3565ce1aa69f`, onchain agent 84918, settled in USDC on
 Base through your AntSeed payment channel. You pay per output token at the rate on the peer
@@ -123,8 +125,8 @@ unaffected. It buys you a refusal, not an answer, so prefer section 3.
 Two rules. It checks what the seller announces, not what your body contains, so a misspelled
 key still gets served and billed. And require only what the model announces:
 `quicknode-blockchain-data` announces `address, blocks, fields, network, rpc, tokens`;
-`nansen-crypto-screener` announces `chains, rows, sort, timeframe, view`; `tavily-web-search`,
-`crypto-skills`, `sippar-x-social`, `sippar-flight-search`, `sippar-linkedin-social` and `sippar-github` announce nothing, so requiring any name on them refuses every call. Read the current lists:
+`nansen-crypto-screener` announces `chains, rows, sort, timeframe, view`; `tavily-web-search`
+announces `include_images, include_raw_content, max_results`; `crypto-skills`, `sippar-x-social`, `sippar-flight-search`, `sippar-linkedin-social` and `sippar-github` announce nothing, so requiring any name on them refuses every call. Read the current lists:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
@@ -169,6 +171,9 @@ non-zero if the behaviour has moved.
 
 ## Changes
 
+- 2.8.0 (2026-10-10): `tavily-web-search` announces `include_images, include_raw_content, max_results`.
+- 2.7.0 (2026-10-10): `sippar-skills` is the ninth model, the aggregator (skills.sh and CryptoSkill);
+  `crypto-skills` stays CryptoSkill-only; the `sippar-skill-adapter` skill.
 - 2.6.0 (2026-10-10): the eighth model, `sippar-github`.
 - 2.5.0 (2026-10-09): the seventh model, `sippar-linkedin-social`.
 - 2.4.0 (2026-10-09): the sixth model, `sippar-flight-search`.

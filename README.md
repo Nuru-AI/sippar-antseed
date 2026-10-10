@@ -6,7 +6,7 @@ on Base from its own payment channel, and gets the provider's data as the provid
 with the source named on every page. Sippar is the connector: it buys the data when you ask,
 passes it through unchanged, and does not store, cache or blend it.
 
-Eight models, one seller peer:
+Nine models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
@@ -14,13 +14,15 @@ Eight models, one seller peer:
 | `nansen-crypto-screener` | the top token contracts on Solana, Ethereum, Base, BNB and Arbitrum, ranked the way you choose; and Nansen's perpetuals screener | Nansen |
 | `tavily-web-search` | a live web search with sources and an answer | Tavily |
 | `crypto-skills` | agent skills: Sippar's own for these models, and CryptoSkill's registry of crypto skills, by id, by search and file by file | Sippar; CryptoSkill and each skill's author |
+| `sippar-skills` | the aggregator: agent skills from skills.sh (every domain) and CryptoSkill (crypto), by id, by a search of both and file by file, plus Sippar's own skills and the adapter that runs any of them on AntSeed | Sippar; skills.sh, CryptoSkill and each skill's author |
 | `sippar-x-social` | public X (Twitter) posts on any subject matching a search, with X's search operators | glim.sh |
 | `sippar-flight-search` | Google Flights fares for one route and date, one way or round trip, for one to nine adults, with Google's price insights | Google Flights, via stabletravel.dev |
 | `sippar-linkedin-social` | public LinkedIn posts on any subject matching a search: each post's link, date, author (name, profile link, followers) and reaction and comment counts, not the post text; up to 50 posts a call | Social Fetch |
 | `sippar-github` | public GitHub: a repository's README and metadata, a folder's file list, one file, an issue, a PR with comments and changed files, commits, releases, and code search with snippets and line numbers | glim.sh |
 
-Three models also answer under their earlier ids, with the same data and rate: `sippar-chain-state`,
-`onchain-token-rankings` and `sippar-skills`. Use the new ids above.
+Two models also answer under their earlier ids, with the same data and rate: `sippar-chain-state`
+and `onchain-token-rankings`. Use the new ids above. `sippar-skills` and `crypto-skills` are two
+models: the aggregator over both indexes, and the CryptoSkill-only one.
 
 ## Where to look
 
@@ -31,6 +33,8 @@ Three models also answer under their earlier ids, with the same data and rate: `
 | token rankings and the perpetuals screener: the five arguments, the two page shapes | [skills/nansen-crypto-screener/SKILL.md](./skills/nansen-crypto-screener/SKILL.md) |
 | web search: how to ask, the page | [skills/tavily-web-search/SKILL.md](./skills/tavily-web-search/SKILL.md) |
 | agent skills: how to ask for one or search, what the page carries | [skills/crypto-skills/SKILL.md](./skills/crypto-skills/SKILL.md) |
+| the aggregator: skills.sh ids and files, a search of both indexes, the license line and audit verdicts | [skills/sippar-skills/SKILL.md](./skills/sippar-skills/SKILL.md) |
+| run a public skill on AntSeed: keep its process, swap its tooling for Sippar's models and AntSeed's catalog | [skills/sippar-skill-adapter/SKILL.md](./skills/sippar-skill-adapter/SKILL.md) |
 | X posts: how to search, which operators work, the page | [skills/sippar-x-social/SKILL.md](./skills/sippar-x-social/SKILL.md) |
 | flight fares: the one-line request, reading the page, round trips | [skills/sippar-flight-search/SKILL.md](./skills/sippar-flight-search/SKILL.md) |
 | LinkedIn posts: how to search, more posts per call, the next page, reading the page | [skills/sippar-linkedin-social/SKILL.md](./skills/sippar-linkedin-social/SKILL.md) |
@@ -39,7 +43,7 @@ Three models also answer under their earlier ids, with the same data and rate: `
 | copy a working call | [examples/curl.sh](./examples/curl.sh), [examples/python.py](./examples/python.py) |
 | check, offline and free, which request shapes keep your arguments | [tools/check-argument-survival.mjs](./tools/check-argument-survival.mjs) |
 
-The nine files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
+The eleven files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
 also the documentation. Give your agent the folder, or read them yourself; they say the same
 thing either way.
 
@@ -90,8 +94,9 @@ Every page is the provider's data. `quicknode-blockchain-data` is QuickNode's an
 JSON-RPC reads, with QuickNode's own integer beside each readable value. `nansen-crypto-screener`
 is Nansen's screener data with the attribution Nansen requires. `tavily-web-search` is Tavily's
 response, whole. `crypto-skills` serves CryptoSkill's files as their authors published them, with the
-author and license named in each skill's `SOURCE.md` and CryptoSkill's risk flags beside it; Sippar
-does not review or filter them. `sippar-x-social` is glim.sh's X search response, whole, including
+author and license named in each skill's `SOURCE.md` and CryptoSkill's risk flags beside it; `sippar-skills`
+adds skills.sh's skills, each with its repository's license line and skills.sh's audit verdicts; Sippar
+does not review, rank or filter them. `sippar-x-social` is glim.sh's X search response, whole, including
 glim.sh's own page totals; posts belong to their authors and some results are spam or off-topic.
 What you compute from a page is yours; Sippar adds no derived figures.
 
