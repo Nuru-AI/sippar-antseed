@@ -180,6 +180,20 @@ and link, so you can say where a room is cheapest for that night.
 **Filter on amenities or stars.** Keep the places with `"Free breakfast": true` in `hotel_amenities`, or
 four stars and up, from the list.
 
+## sippar-amazon
+
+Amazon products and offers on six marketplaces, as glim.sh returns them.
+
+**Shortlist by trust, not by ad.** `{"query": "noise cancelling headphones", "sort_by": "most_reviewed",
+"min_reviews": 1000}`, then collapse the colour variants, which share one review count.
+
+**Check one offer before recommending it.** Look up the ASIN from the search. Read
+`offers_summary.buybox.seller`, `stock`, `delivery` and `other_offers_from_price`: a returns
+outlet or a single unit left changes the advice.
+
+**Same product, two countries.** Search with `"tld": "de"` and `"tld": "co.uk"` and compare
+`price_net`, which takes out each country's VAT.
+
 ## sippar-github
 
 Public GitHub: read a repository, its code and its issues.
@@ -245,6 +259,10 @@ Each is a sequence of calls. The value named in one page goes into the next requ
 16. **Flight, then a bed.** `sippar-flight-search` for the fare to a city; then `sippar-hotel-search`
    for places to stay there, with the price level for a night and, with `offers`, where it is
    cheapest.
+
+17. **What people say, then what it costs.** `sippar-reddit-social` for the threads about a
+   product category; then `sippar-amazon` for the products named there, with price, rating and the
+   reviews on the product page.
 
 ## What the pages are not
 

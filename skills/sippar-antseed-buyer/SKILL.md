@@ -1,14 +1,14 @@
 ---
 name: sippar-antseed-buyer
-description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search, crypto-skills, sippar-skills, sippar-x-social, sippar-flight-search, sippar-linkedin-social, sippar-github, sippar-reddit-social or sippar-hotel-search from an AntSeed buyer or through an AntSeed API-key gateway. It carries the endpoint (your buyer proxy, or a gateway with your key), the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters, ANTSEED_BASE_URL, antseed: command not found, connection refused on 8377.
+description: Reach Sippar's models on the AntSeed network and get the answer you asked for. Use this before calling quicknode-blockchain-data, nansen-crypto-screener, tavily-web-search, crypto-skills, sippar-skills, sippar-x-social, sippar-flight-search, sippar-linkedin-social, sippar-github, sippar-reddit-social, sippar-hotel-search or sippar-amazon from an AntSeed buyer or through an AntSeed API-key gateway. It carries the endpoint (your buyer proxy, or a gateway with your key), the peer pin, the one request shape that keeps your arguments, the two channels that survive a translating client, the fail-closed header, the 8-calls-in-flight limit, and how to read the routing line. Triggers on - buy data from Sippar on AntSeed, pin the Sippar peer, my network parameter was ignored, I was served the wrong chain, 429 buyer_concurrency_limit, metadata.sippar, x-sippar headers, x-antseed-required-parameters, ANTSEED_BASE_URL, antseed: command not found, connection refused on 8377.
 metadata:
-  version: "2.11.0"
+  version: "2.12.0"
   updated: "2026-10-10"
 ---
 
 # Reaching Sippar's models on AntSeed
 
-Sippar sells eleven models on AntSeed. Each one is a provider's data or files served as the
+Sippar sells twelve models on AntSeed. Each one is a provider's data or files served as the
 provider returns them, with the source named on every page. This skill is about the transport:
 how a request reaches the right seller with its arguments intact, and how to tell from the
 answer that it did. What each model answers, and what you can do with it, is in its own skill:
@@ -26,6 +26,7 @@ answer that it did. What each model answers, and what you can do with it, is in 
 | `sippar-github` | public GitHub from glim.sh: a repository, a folder's file list, a file, an issue or PR, commits, releases, code search. Send a ref (`owner/repo`, a github.com URL) or a GitHub search; `repo`, `kind`, `per_page` and `page` go inside the message text as JSON | the `sippar-github` skill |
 | `sippar-reddit-social` | public Reddit posts matching a search, from glim.sh: title, thread link, subreddit, author, date, score and comment count per post, no post text or comments. Send keywords; `time` and `cursor` go inside the message text as JSON | the `sippar-reddit-social` skill |
 | `sippar-hotel-search` | places to stay for one search, from Google Maps via OpenWeb Ninja: type, stars, rating, amenities, address and Google's current nightly price; end the line with `offers` for each booking site's price | the `sippar-hotel-search` skill |
+| `sippar-amazon` | Amazon from glim.sh: products for a search or `bestsellers:<category>` on six marketplaces, or one product's offer, other sellers and top reviews by ASIN or product URL; options in a JSON message | the `sippar-amazon` skill |
 
 Two models also answer under their earlier ids, with the same data, arguments and rate:
 `sippar-chain-state` (now `quicknode-blockchain-data`) and `onchain-token-rankings` (now
@@ -153,7 +154,7 @@ Two rules. It checks what the seller announces, not what your body contains, so 
 key still gets served and billed. And require only what the model announces:
 `quicknode-blockchain-data` announces `address, blocks, fields, network, rpc, tokens`;
 `nansen-crypto-screener` announces `chains, rows, sort, symbols, timeframe, view`; `tavily-web-search`
-announces `include_images, include_raw_content, max_results`; `crypto-skills`, `sippar-x-social`, `sippar-flight-search`, `sippar-linkedin-social`, `sippar-github`, `sippar-reddit-social` and `sippar-hotel-search` announce nothing, so requiring any name on them refuses every call. Read the current lists:
+announces `include_images, include_raw_content, max_results`; `crypto-skills`, `sippar-x-social`, `sippar-flight-search`, `sippar-linkedin-social`, `sippar-github`, `sippar-reddit-social`, `sippar-hotel-search` and `sippar-amazon` announce nothing, so requiring any name on them refuses every call. Read the current lists:
 
 ```bash
 antseed network peer 706fca9c0d0684c30f86209aae0c3565ce1aa69f --json \
@@ -198,6 +199,7 @@ non-zero if the behaviour has moved.
 
 ## Changes
 
+- 2.12.0 (2026-10-10): the twelfth model, `sippar-amazon`.
 - 2.11.0 (2026-10-10): through an AntSeed API-key gateway. When `ANTSEED_BASE_URL` and
   `ANTSEED_API_KEY` are set, post there with the key: no local proxy and no `antseed` command
   are needed.

@@ -133,6 +133,18 @@ def hotels(search: str, offers: bool = False) -> str:
     return r.choices[0].message.content
 
 
+def amazon(line: str, **options) -> str:
+    """Amazon through glim.sh. `line` is a search ("usb c charger"), "bestsellers:<category>", an ASIN
+    from a search result, or an amazon.<tld>/dp/<ASIN> URL. Options use glim.sh's names: tld, page,
+    sort_by, min_reviews, include_paid, include_suggested, response_format."""
+    content = json.dumps({"query": line, **options}) if options else line
+    r = client.chat.completions.create(
+        model="sippar-amazon",
+        messages=[{"role": "user", "content": content}],
+    )
+    return r.choices[0].message.content
+
+
 def flights(line: str) -> str:
     """Google Flights fares: one line, FROM TO DATE [RETURN-DATE] [ADULTS], airport codes ("JFK LHR 2026-11-12 2026-11-19 2")."""
     r = client.chat.completions.create(

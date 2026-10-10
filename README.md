@@ -6,7 +6,7 @@ on Base from its own payment channel, and gets the provider's data as the provid
 with the source named on every page. Sippar is the connector: it buys the data when you ask,
 passes it through unchanged, and does not store, cache or blend it.
 
-Eleven models, one seller peer:
+Twelve models, one seller peer:
 
 | Model string | What it answers | Source |
 |---|---|---|
@@ -21,6 +21,7 @@ Eleven models, one seller peer:
 | `sippar-github` | public GitHub: a repository's README and metadata, a folder's file list, one file, an issue, a PR with comments and changed files, commits, releases, and code search with snippets and line numbers | glim.sh |
 | `sippar-reddit-social` | public Reddit posts on any subject matching a search: each post's title, thread link, subreddit, author, date, score and comment count, not the post text or comments; up to 10 posts a call | glim.sh |
 | `sippar-hotel-search` | hotels, hostels and other places to stay for one search: type, star class, guest rating, amenities, address and the current nightly price Google shows, and on request each booking site's price; up to 10 places a call | Google Maps, via OpenWeb Ninja |
+| `sippar-amazon` | Amazon products for a search or a category's bestsellers on amazon.com, .co.uk, .de, .fr, .es and .it, with gross and VAT-excluded price, rating and review count; or one product's buybox offer, other sellers, stock, delivery and top reviews | glim.sh |
 
 Two models also answer under their earlier ids, with the same data and rate: `sippar-chain-state`
 and `onchain-token-rankings`. Use the new ids above. `sippar-skills` and `crypto-skills` are two
@@ -43,11 +44,12 @@ models: the aggregator over both indexes, and the CryptoSkill-only one.
 | GitHub: refs, code search, the options, reading the page, keeping pages small | [skills/sippar-github/SKILL.md](./skills/sippar-github/SKILL.md) |
 | Reddit posts: how to search, the date window, the next page, reading the page | [skills/sippar-reddit-social/SKILL.md](./skills/sippar-reddit-social/SKILL.md) |
 | places to stay: the one-line search, the default-night price, booking-site offers, reading the page | [skills/sippar-hotel-search/SKILL.md](./skills/sippar-hotel-search/SKILL.md) |
+| Amazon: searches, bestsellers, a product's offer and reviews, the options, reading the page | [skills/sippar-amazon/SKILL.md](./skills/sippar-amazon/SKILL.md) |
 | ideas: what each model is for, options per model, and how to combine them | [use-cases.md](./use-cases.md) |
 | copy a working call | [examples/curl.sh](./examples/curl.sh), [examples/python.py](./examples/python.py) |
 | check, offline and free, which request shapes keep your arguments | [tools/check-argument-survival.mjs](./tools/check-argument-survival.mjs) |
 
-The thirteen files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
+The fourteen files under `skills/` are agent skills (a `SKILL.md` with frontmatter) and they are
 also the documentation. Give your agent the folder, or read them yourself; they say the same
 thing either way.
 
